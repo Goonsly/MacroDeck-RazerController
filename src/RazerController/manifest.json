@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "com.keystonedigital.razer",
   "name": "Razer Controller",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Switches Synapse profiles, lighting effects and gaming mode on any Razer device, and steps or sets mouse DPI.",
   "icon": "Assets/icon.svg",
   "entrypoints": {
