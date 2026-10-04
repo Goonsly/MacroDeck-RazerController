@@ -42,11 +42,7 @@ internal sealed class MouseDpiService : IDisposable
 	public static MouseDpiService CreateDefault(ILogger logger) => new(OpenSystemControls, logger);
 
 	public Task RefreshAsync(CancellationToken cancellationToken) =>
-		RunAsync(mouse =>
-		{
-			Publish(mouse);
-			return DpiOutcome.Applied;
-		}, cancellationToken);
+		RunAsync(mouse => Publish(mouse) ? DpiOutcome.Applied : DpiOutcome.Failed, cancellationToken);
 
 	public Task<DpiOutcome> StepAsync(bool up, CancellationToken cancellationToken) =>
 		RunAsync(mouse =>
@@ -86,7 +82,11 @@ internal sealed class MouseDpiService : IDisposable
 			return await Task.Run(() =>
 			{
 				var mouse = _mouse ??= FindMouse();
-				if (mouse is null) return DpiOutcome.NoMouse;
+				if (mouse is null)
+				{
+					Volatile.Write(ref _state, null);
+					return DpiOutcome.NoMouse;
+				}
 
 				var outcome = work(mouse);
 				if (outcome == DpiOutcome.Failed)
@@ -119,14 +119,15 @@ internal sealed class MouseDpiService : IDisposable
 		return found;
 	}
 
-	private void Publish(RazerMouseControl mouse)
+	private bool Publish(RazerMouseControl mouse)
 	{
 		var dpi = mouse.ReadDpi();
 		var stages = mouse.ReadStages();
-		if (dpi is null || stages is null) return;
+		if (dpi is null || stages is null) return false;
 
 		var ordered = stages.Stages.OrderBy(stage => stage.X).ToList();
 		Volatile.Write(ref _state, new MouseDpiState(dpi.Value.X, ordered.FindIndex(stage => stage.X == dpi.Value.X) + 1, ordered.Count));
+		return true;
 	}
 
 	private static List<RazerMouseControl> OpenSystemControls()

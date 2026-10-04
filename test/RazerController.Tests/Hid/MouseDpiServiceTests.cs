@@ -71,6 +71,53 @@ public sealed class MouseDpiServiceTests
 	}
 
 	[Test]
+	public async Task State_follows_a_change_made_on_the_mouse_itself()
+	{
+		var mouse = new SimulatedMouse(800, 1600, 3200);
+		using var service = ServiceFor(mouse);
+		await service.RefreshAsync(default);
+
+		mouse.Dpi = 3200;
+		await service.RefreshAsync(default);
+
+		Assert.That(service.State, Is.EqualTo(new MouseDpiState(3200, 3, 3)));
+	}
+
+	[Test]
+	public async Task State_clears_when_the_mouse_disappears()
+	{
+		var mouse = new SimulatedMouse(800, 1600, 3200);
+		var unplugged = false;
+		var transport = mouse.CreateTransport();
+		var responder = transport.Responder!;
+		transport.Responder = sent => unplugged ? null : responder(sent);
+		using var service = new MouseDpiService(() => unplugged ? [] : [new RazerMouseControl(new RazerHidDevice(transport, replyDelayMs: 0))], SynapseServiceTests.Log);
+		await service.RefreshAsync(default);
+
+		unplugged = true;
+		await service.RefreshAsync(default);
+		await service.RefreshAsync(default);
+
+		Assert.That(service.State, Is.Null);
+	}
+
+	[Test]
+	public async Task The_poller_refreshes_the_state()
+	{
+		var mouse = new SimulatedMouse(800, 1600, 3200);
+		using var service = ServiceFor(mouse);
+		using var poller = new MouseDpiPoller(service, TimeSpan.FromMilliseconds(10));
+		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+		await poller.StartAsync(cts.Token);
+		mouse.Dpi = 1600;
+		while (service.State?.Dpi != 1600 && !cts.IsCancellationRequested) await Task.Delay(10, cts.Token);
+		await poller.StopAsync(default);
+
+		Assert.That(service.State?.Dpi, Is.EqualTo(1600));
+	}
+
+	[Test]
 	public async Task No_mouse_reports_NoMouse()
 	{
 		using var service = ServiceFor(null);

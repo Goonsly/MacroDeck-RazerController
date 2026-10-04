@@ -18,6 +18,7 @@ internal static class RazerServices
 		services.AddSingleton(sp => MouseDpiService.CreateDefault(sp.GetRequiredService<ILogger>()));
 		services.AddSingleton<IAutostartRegistry, WindowsAutostartRegistry>();
 		services.AddHostedService(sp => sp.GetRequiredService<SynapseService>());
+		services.AddHostedService(sp => new MouseDpiPoller(sp.GetRequiredService<MouseDpiService>(), TimeSpan.FromSeconds(2)));
 		return services;
 	}
 
