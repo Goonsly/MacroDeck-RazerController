@@ -60,6 +60,39 @@ public sealed class InspectorTests
 	}
 
 	[Test]
+	public async Task A_cancelled_call_drops_the_connection_so_the_next_call_reconnects()
+	{
+		var duplex = new FakeDuplex(echoDelayMs: 2000);
+		using var inspector = new CdpInspector(new FakeTargetFetcher(), new FakeDuplexFactory(duplex));
+		await inspector.ConnectAsync(CancellationToken.None);
+		using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+		Assert.CatchAsync<OperationCanceledException>(() => inspector.EvaluateAsync("1", cts.Token));
+		Assert.That(inspector.IsConnected, Is.False);
+	}
+
+	[Test]
+	public void Connect_times_out_when_the_handshake_stalls()
+	{
+		using var inspector = new CdpInspector(new FakeTargetFetcher(), new StallingDuplexFactory(), timeout: TimeSpan.FromMilliseconds(200));
+		var watch = System.Diagnostics.Stopwatch.StartNew();
+
+		var ex = Assert.ThrowsAsync<SynapseInspectorException>(() => inspector.ConnectAsync(CancellationToken.None));
+
+		Assert.That(ex!.Code, Is.EqualTo("transport_lost"));
+		Assert.That(watch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(3)));
+	}
+
+	private sealed class StallingDuplexFactory : IRawDuplexFactory
+	{
+		public async Task<IRawDuplex> ConnectAsync(Uri webSocketDebuggerUrl, CancellationToken cancellationToken)
+		{
+			await Task.Delay(Timeout.Infinite, cancellationToken);
+			throw new InvalidOperationException("unreachable");
+		}
+	}
+
+	[Test]
 	public void Evaluate_before_connect_throws_transport_lost()
 	{
 		using var inspector = new CdpInspector(new FakeTargetFetcher(), new FakeDuplexFactory(new FakeDuplex()));

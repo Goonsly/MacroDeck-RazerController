@@ -50,7 +50,20 @@ internal sealed class CdpInspector : IInspector, IDisposable
 			var rawTargets = await _targetFetcher.FetchAsync(_port, cancellationToken).ConfigureAwait(false);
 			var webSocketUrl = TargetSelection.SelectSingleNodeTarget(rawTargets, _port);
 
-			_duplex = await _duplexFactory.ConnectAsync(webSocketUrl, cancellationToken).ConfigureAwait(false);
+			using (var handshake = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+			{
+				// Something on the port may accept TCP and stall the upgrade while this holds the gate.
+				handshake.CancelAfter(_timeout);
+
+				try
+				{
+					_duplex = await _duplexFactory.ConnectAsync(webSocketUrl, handshake.Token).ConfigureAwait(false);
+				}
+				catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+				{
+					throw new SynapseInspectorException("transport_lost", "The inspector did not complete the WebSocket handshake in time.");
+				}
+			}
 
 			try
 			{
@@ -202,6 +215,12 @@ internal sealed class CdpInspector : IInspector, IDisposable
 		{
 			Disconnect();
 			throw new SynapseInspectorException("transport_lost", "The inspector did not respond in time.");
+		}
+		catch (OperationCanceledException)
+		{
+			// Cancelling a pending socket call aborts the socket, so it cannot serve the next call.
+			Disconnect();
+			throw;
 		}
 		catch (Exception ex) when (ex is IOException or WebSocketException or ObjectDisposedException)
 		{
