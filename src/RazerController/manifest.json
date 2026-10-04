@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schemas.macro-deck.app/plugin-manifest-v1.schema.json",
+  "manifestVersion": 1,
+  "id": "com.keystonedigital.razer",
+  "name": "Razer Controller",
+  "version": "0.1.1",
+  "description": "Switches Synapse profiles, lighting effects and gaming mode on any Razer device, and steps or sets mouse DPI.",
+  "icon": "Assets/icon.svg",
+  "entrypoints": {
+    "win-x64": { "executable": "runtimes/win-x64/RazerController.dll", "runtime": { "kind": "FrameworkDependent", "dotnetVersion": "10.0" } }
+  },
+  "publisher": {
+    "name": "Keystone Digital"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/Goonsly/MacroDeck-RazerController",
+  "compatibility": {
+    "macroDeck": ">=3.0.0-0"
+  },
+  "permissions": ["device:usb", "process:spawn"]
+}

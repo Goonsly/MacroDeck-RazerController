@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- The default-language file. Every translation is checked against it and the fallback chain ends
+       here, so it is required even for a plugin that ships one language. Add a language by adding
+       Localization/Strings.<culture>.resx beside it (Strings.de.resx, Strings.pt-BR.resx).
+       A dotted key becomes a nested class: Actions.LogMessage.Name is Strings.Actions.LogMessage.Name(). -->
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Integration.Name" xml:space="preserve">
+    <value>Razer Controller</value>
+  </data>
+  <data name="Actions.Common.Device.Label" xml:space="preserve">
+    <value>Device</value>
+  </data>
+  <data name="Actions.Common.Device.Description" xml:space="preserve">
+    <value>The Razer device this button controls.</value>
+  </data>
+  <data name="Actions.Common.DeviceNotConnected" xml:space="preserve">
+    <value>{serial} (not connected)</value>
+  </data>
+  <data name="Actions.SwitchProfile.Name" xml:space="preserve">
+    <value>Switch Synapse profile</value>
+  </data>
+  <data name="Actions.SwitchProfile.Description" xml:space="preserve">
+    <value>Switches a Razer device to a Synapse profile, steps through its profiles, or cycles through chosen ones.</value>
+  </data>
+  <data name="Actions.SwitchProfile.Mode.Label" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Actions.SwitchProfile.Mode.Profile" xml:space="preserve">
+    <value>A chosen profile</value>
+  </data>
+  <data name="Actions.SwitchProfile.Mode.Next" xml:space="preserve">
+    <value>Next profile</value>
+  </data>
+  <data name="Actions.SwitchProfile.Mode.Previous" xml:space="preserve">
+    <value>Previous profile</value>
+  </data>
+  <data name="Actions.SwitchProfile.Mode.Cycle" xml:space="preserve">
+    <value>Cycle through chosen profiles</value>
+  </data>
+  <data name="Actions.SwitchProfile.Profile.Label" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Actions.SwitchProfile.Profiles.Label" xml:space="preserve">
+    <value>Profiles to cycle</value>
+  </data>
+  <data name="Actions.LightingEffect.Name" xml:space="preserve">
+    <value>Set lighting effect</value>
+  </data>
+  <data name="Actions.LightingEffect.Description" xml:space="preserve">
+    <value>Sets the lighting effect of a Razer device in its active Synapse profile.</value>
+  </data>
+  <data name="Actions.LightingEffect.Effect.Label" xml:space="preserve">
+    <value>Effect</value>
+  </data>
+  <data name="Actions.LightingEffect.Color.Label" xml:space="preserve">
+    <value>Colour</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Static" xml:space="preserve">
+    <value>Static</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Breathing" xml:space="preserve">
+    <value>Breathing</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Spectrum" xml:space="preserve">
+    <value>Spectrum cycling</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Wave" xml:space="preserve">
+    <value>Wave</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Reactive" xml:space="preserve">
+    <value>Reactive</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Ripple" xml:space="preserve">
+    <value>Ripple</value>
+  </data>
+  <data name="Actions.LightingEffect.Effects.Starlight" xml:space="preserve">
+    <value>Starlight</value>
+  </data>
+  <data name="Actions.GamingMode.Name" xml:space="preserve">
+    <value>Gaming mode</value>
+  </data>
+  <data name="Actions.GamingMode.Description" xml:space="preserve">
+    <value>Turns a Razer keyboard's gaming mode on or off. Gaming mode disables the Windows key.</value>
+  </data>
+  <data name="Actions.GamingMode.State.Label" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="Actions.GamingMode.State.On" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="Actions.GamingMode.State.Off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="Actions.GamingMode.State.Toggle" xml:space="preserve">
+    <value>Toggle</value>
+  </data>
+  <data name="Actions.StepDpi.Name" xml:space="preserve">
+    <value>Step mouse DPI</value>
+  </data>
+  <data name="Actions.StepDpi.Description" xml:space="preserve">
+    <value>Moves the Razer mouse one DPI stage up or down within its active profile.</value>
+  </data>
+  <data name="Actions.StepDpi.Direction.Label" xml:space="preserve">
+    <value>Direction</value>
+  </data>
+  <data name="Actions.StepDpi.Direction.Up" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="Actions.StepDpi.Direction.Down" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="Actions.TemporaryDpi.Name" xml:space="preserve">
+    <value>Temporary mouse DPI</value>
+  </data>
+  <data name="Actions.TemporaryDpi.Description" xml:space="preserve">
+    <value>Sets the Razer mouse to a DPI value until the next profile switch or DPI step.</value>
+  </data>
+  <data name="Actions.TemporaryDpi.Dpi.Label" xml:space="preserve">
+    <value>DPI</value>
+  </data>
+  <data name="Actions.Errors.SynapseUnavailable" xml:space="preserve">
+    <value>Razer Synapse is not reachable. Check that Synapse is running with Synapse control enabled in this plugin's settings.</value>
+  </data>
+  <data name="Actions.Errors.DeviceNotFound" xml:space="preserve">
+    <value>That Razer device is not connected.</value>
+  </data>
+  <data name="Actions.Errors.ProfileNotFound" xml:space="preserve">
+    <value>That Synapse profile no longer exists on this device.</value>
+  </data>
+  <data name="Actions.Errors.NotApplied" xml:space="preserve">
+    <value>Synapse did not apply the change.</value>
+  </data>
+  <data name="Actions.Errors.Unsupported" xml:space="preserve">
+    <value>This device does not support that setting.</value>
+  </data>
+  <data name="Actions.Errors.NoMouse" xml:space="preserve">
+    <value>No Razer mouse answered.</value>
+  </data>
+  <data name="Actions.Errors.MouseFailed" xml:space="preserve">
+    <value>The Razer mouse did not accept the change.</value>
+  </data>
+  <data name="Settings.Inspector.Title" xml:space="preserve">
+    <value>Synapse control</value>
+  </data>
+  <data name="Settings.Inspector.Description" xml:space="preserve">
+    <value>Profile switching, lighting and gaming mode drive Razer Synapse through its local debugging port. Turning this on adds --inspect=127.0.0.1:9229 to Synapse's Windows startup entry. Takes effect the next time Synapse starts. Currently: {flag}. Plugin status: {status}.</value>
+  </data>
+  <data name="Settings.Inspector.SecurityWarning" xml:space="preserve">
+    <value>While this is on, any program running on this PC can control Razer Synapse through that port. Mouse DPI works without it.</value>
+  </data>
+  <data name="Settings.Inspector.Enabled.Label" xml:space="preserve">
+    <value>Enable Synapse control</value>
+  </data>
+  <data name="Settings.Inspector.On" xml:space="preserve">
+    <value>on</value>
+  </data>
+  <data name="Settings.Inspector.Off" xml:space="preserve">
+    <value>off</value>
+  </data>
+  <data name="Settings.Inspector.NotInstalled" xml:space="preserve">
+    <value>Razer Synapse's startup entry was not found. Install Razer Synapse 4 and let it start once.</value>
+  </data>
+</root>

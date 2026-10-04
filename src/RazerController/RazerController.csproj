@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<!-- Pinned: manifest.json names this executable, and the generated Strings class lives in this namespace. -->
+		<AssemblyName>RazerController</AssemblyName>
+		<RootNamespace>KeystoneDigital.RazerController</RootNamespace>
+		<IsPackable>false</IsPackable>
+		<!-- LibraryImport source generation for the HID P/Invokes. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<UserSecretsId>RazerController-PluginDevelopment</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MacroDeck.Plugin.Analyzers" PrivateAssets="all" />
+		<PackageReference Include="MacroDeck.Localization" />
+		<PackageReference Include="MacroDeck.Plugin.Hosting" />
+		<PackageReference Include="MacroDeck.Plugin.Serilog" />
+		<PackageReference Include="MacroDeck.Sdk" />
+		<PackageReference Include="HidSharp" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="RazerController.Tests" />
+		<InternalsVisibleTo Include="ManualInspectorCheck" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="Assets\icon.svg" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+</Project>
