@@ -64,9 +64,10 @@ internal static class DeviceOptions
 			: (null, ActionResult.Failed(ActionErrorCodes.NotFound, Strings.Actions.Errors.DeviceNotFound()));
 	}
 
-	public static ActionResult ToResult(CommandOutcome outcome) => outcome switch
+	public static ActionResult ToResult(CommandOutcome outcome, Func<ActionResult>? invalid = null) => outcome switch
 	{
-		CommandOutcome.Applied => ActionResult.Success(),
+		CommandOutcome.Applied or CommandOutcome.NoChange => ActionResult.Success(),
+		CommandOutcome.Invalid => invalid?.Invoke() ?? ActionResult.Failed(ActionErrorCodes.InvalidParameter, Strings.Actions.Errors.NotApplied()),
 		CommandOutcome.NotConnected => ActionResult.Failed(ActionErrorCodes.NotConnected, Strings.Actions.Errors.SynapseUnavailable()),
 		CommandOutcome.DeviceNotFound => ActionResult.Failed(ActionErrorCodes.NotFound, Strings.Actions.Errors.DeviceNotFound()),
 		_ => ActionResult.Failed(ActionErrorCodes.Timeout, Strings.Actions.Errors.NotApplied()),

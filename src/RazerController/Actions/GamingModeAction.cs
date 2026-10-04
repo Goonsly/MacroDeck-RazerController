@@ -54,27 +54,31 @@ internal sealed class GamingModeAction(SynapseService synapse) : IDynamicOptions
 			var (device, failure) = DeviceOptions.Resolve(synapse, context.Parameters);
 			if (device is null) return failure!;
 
-			if (device.GamingMode is not { } current)
+			if (device.GamingMode is null)
 			{
 				return ActionResult.Failed(ActionErrorCodes.ProviderRejected, Strings.Actions.Errors.Unsupported());
 			}
 
-			bool? target = (ParameterReader.String(context.Parameters, StateParameter) ?? "toggle") switch
+			var state = ParameterReader.String(context.Parameters, StateParameter) ?? "toggle";
+			if (state is not ("on" or "off" or "toggle")) return DeviceOptions.Invalid(Strings.Actions.GamingMode.State.Label());
+
+			var outcome = await synapse.SendAndConfirmAsync(device.Serial, fresh =>
 			{
-				"on" => true,
-				"off" => false,
-				"toggle" => !current.On,
-				_ => null,
-			};
+				if (fresh.GamingMode is not { } current) return DevicePlan.Invalid;
 
-			if (target is not { } on) return DeviceOptions.Invalid(Strings.Actions.GamingMode.State.Label());
-			if (on == current.On) return ActionResult.Success();
+				var on = state switch
+				{
+					"on" => true,
+					"off" => false,
+					_ => !current.On,
+				};
 
-			var outcome = await synapse.SendAndConfirmAsync(
-				device.Serial, "ON_SET_GAME_MODE", new { gamingMode = WithState(current, on) },
-				latest => latest.GamingMode?.On == on, context.CancellationToken).ConfigureAwait(false);
+				return on == current.On
+					? DevicePlan.NoChange
+					: DevicePlan.Send("ON_SET_GAME_MODE", new { gamingMode = WithState(current, on) }, latest => latest.GamingMode?.On == on);
+			}, context.CancellationToken).ConfigureAwait(false);
 
-			return DeviceOptions.ToResult(outcome);
+			return DeviceOptions.ToResult(outcome, () => ActionResult.Failed(ActionErrorCodes.ProviderRejected, Strings.Actions.Errors.Unsupported()));
 		}
 	}
 }

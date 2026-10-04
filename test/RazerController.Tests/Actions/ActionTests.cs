@@ -173,6 +173,40 @@ public sealed class ActionTests
 	}
 
 	[Test]
+	public async Task Two_quick_next_presses_advance_two_profiles()
+	{
+		var (harness, fake, synapse, _) = await ReadyAsync();
+		await using var _h = harness;
+		var profiles = synapse.FindBySerial(Mouse)!.Profiles;
+		fake.SetActiveProfile(103, profiles[0].Guid);
+		await synapse.RefreshAsync(default);
+		fake.OnCommand = c => fake.SetActiveProfile(103, c.Payload.GetProperty("newActiveProfileGUID").GetString()!);
+
+		var presses = await Task.WhenAll(
+			harness.Actions.ExecuteAsync("switch-profile", P(("device", Mouse), ("mode", "next"))),
+			harness.Actions.ExecuteAsync("switch-profile", P(("device", Mouse), ("mode", "next"))));
+
+		Assert.That(presses.All(p => p.Succeeded), Is.True);
+		Assert.That(fake.Commands.Select(c => c.Payload.GetProperty("newActiveProfileGUID").GetString()), Is.EquivalentTo(new[] { profiles[1].Guid, profiles[2].Guid }));
+		Assert.That(synapse.FindBySerial(Mouse)!.ActiveProfileGuid, Is.EqualTo(profiles[2].Guid));
+	}
+
+	[Test]
+	public async Task Two_quick_gaming_toggles_end_where_they_started()
+	{
+		var (harness, fake, synapse, _) = await ReadyAsync();
+		await using var _h = harness;
+		fake.OnCommand = c => fake.EditActiveProfile(554, p => p["gamingMode"] = System.Text.Json.Nodes.JsonNode.Parse(c.Payload.GetProperty("gamingMode").GetRawText()));
+
+		await Task.WhenAll(
+			harness.Actions.ExecuteAsync("gaming-mode", P(("device", Keyboard), ("state", "toggle"))),
+			harness.Actions.ExecuteAsync("gaming-mode", P(("device", Keyboard), ("state", "toggle"))));
+
+		Assert.That(fake.Commands, Has.Count.EqualTo(2));
+		Assert.That(synapse.FindBySerial(Keyboard)!.GamingMode!.On, Is.False);
+	}
+
+	[Test]
 	public async Task Cycle_starts_at_the_first_entry_when_the_active_profile_is_not_in_the_list()
 	{
 		var (harness, fake, synapse, _) = await ReadyAsync();

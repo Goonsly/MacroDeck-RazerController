@@ -85,18 +85,15 @@ internal sealed class SwitchProfileAction(SynapseService synapse) : IDynamicOpti
 			if (mode == "profile" && profile is null) return DeviceOptions.Invalid(Strings.Actions.SwitchProfile.Profile.Label());
 			if (mode == "cycle" && cycle.Count == 0) return DeviceOptions.Invalid(Strings.Actions.SwitchProfile.Profiles.Label());
 
-			if (ChooseTarget(device, mode, profile, cycle) is not { } target)
+			var outcome = await synapse.SendAndConfirmAsync(device.Serial, current =>
 			{
-				return ActionResult.Failed(ActionErrorCodes.NotFound, Strings.Actions.Errors.ProfileNotFound());
-			}
+				if (ChooseTarget(current, mode, profile, cycle) is not { } target) return DevicePlan.Invalid;
+				if (target == current.ActiveProfileGuid) return DevicePlan.NoChange;
 
-			if (target == device.ActiveProfileGuid) return ActionResult.Success();
+				return DevicePlan.Send("ON_SWITCH_PROFILE", new { newActiveProfileGUID = target }, latest => latest.ActiveProfileGuid == target);
+			}, context.CancellationToken).ConfigureAwait(false);
 
-			var outcome = await synapse.SendAndConfirmAsync(
-				device.Serial, "ON_SWITCH_PROFILE", new { newActiveProfileGUID = target },
-				current => current.ActiveProfileGuid == target, context.CancellationToken).ConfigureAwait(false);
-
-			return DeviceOptions.ToResult(outcome);
+			return DeviceOptions.ToResult(outcome, () => ActionResult.Failed(ActionErrorCodes.NotFound, Strings.Actions.Errors.ProfileNotFound()));
 		}
 	}
 }

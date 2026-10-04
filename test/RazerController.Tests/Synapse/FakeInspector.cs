@@ -45,8 +45,11 @@ internal sealed class FakeInspector : IInspector
 		return Task.CompletedTask;
 	}
 
-	public Task<JsonElement?> EvaluateAsync(string expression, CancellationToken cancellationToken)
+	public async Task<JsonElement?> EvaluateAsync(string expression, CancellationToken cancellationToken)
 	{
+		// A real round trip yields; without this, concurrent presses could never overlap in tests.
+		await Task.Delay(5, cancellationToken);
+
 		if (!IsConnected) throw new SynapseInspectorException("transport_lost", "closed");
 
 		if (EvaluateError is not null)
@@ -57,13 +60,13 @@ internal sealed class FakeInspector : IInspector
 
 		if (expression == InspectorScripts.Catalog)
 		{
-			return Task.FromResult<JsonElement?>(JsonSerializer.SerializeToElement(_snapshot));
+			return JsonSerializer.SerializeToElement(_snapshot);
 		}
 
 		var command = DecodeCommand(expression);
 		Commands.Add(command);
 		OnCommand?.Invoke(command);
-		return Task.FromResult<JsonElement?>(JsonSerializer.SerializeToElement(new { sent = CommandSent }));
+		return JsonSerializer.SerializeToElement(new { sent = CommandSent });
 	}
 
 	public void Disconnect() => IsConnected = false;

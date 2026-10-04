@@ -77,8 +77,16 @@ internal sealed class SynapseService : BackgroundService
 		}
 	}
 
-	public async Task<CommandOutcome> SendAndConfirmAsync(
-		string serial, string eventType, object payload, Func<RazerDeviceInfo, bool> isApplied, CancellationToken cancellationToken)
+	public Task<CommandOutcome> SendAndConfirmAsync(
+		string serial, string eventType, object payload, Func<RazerDeviceInfo, bool> isApplied, CancellationToken cancellationToken) =>
+		SendAndConfirmAsync(serial, _ => DevicePlan.Send(eventType, payload, isApplied), cancellationToken);
+
+	/// <summary>
+	/// Runs <paramref name="plan"/> against the device as it is once this device's previous command has
+	/// confirmed, so two quick presses of Next or Toggle act twice instead of both acting on the same
+	/// stale state.
+	/// </summary>
+	public async Task<CommandOutcome> SendAndConfirmAsync(string serial, Func<RazerDeviceInfo, DevicePlan> plan, CancellationToken cancellationToken)
 	{
 		if (!IsReachable) return CommandOutcome.NotConnected;
 
@@ -89,7 +97,12 @@ internal sealed class SynapseService : BackgroundService
 		{
 			if (FindBySerial(serial) is not { } device) return CommandOutcome.DeviceNotFound;
 
-			var reply = await _inspector.EvaluateAsync(InspectorScripts.Command(device.Channel, eventType, payload), cancellationToken).ConfigureAwait(false);
+			var step = plan(device);
+			if (step.Shortcut is { } shortcut) return shortcut;
+
+			var eventType = step.EventType!;
+			var isApplied = step.IsApplied!;
+			var reply = await _inspector.EvaluateAsync(InspectorScripts.Command(device.Channel, eventType, step.Payload!), cancellationToken).ConfigureAwait(false);
 			var sent = reply is { ValueKind: System.Text.Json.JsonValueKind.Object } value
 				&& value.TryGetProperty("sent", out var flag)
 				&& flag.ValueKind == System.Text.Json.JsonValueKind.True;
