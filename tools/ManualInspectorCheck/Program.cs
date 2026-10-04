@@ -72,5 +72,30 @@ if (args is ["--roundtrip"])
 	return 0;
 }
 
-Console.WriteLine("Usage: ManualInspectorCheck --dump <path> | --roundtrip");
+//   --soak <seconds> keep one inspector session, read the catalog every 2 s, print every drop
+if (args is ["--soak", var secondsText] && int.TryParse(secondsText, out var seconds))
+{
+	using var fetcher = new HttpCdpTargetFetcher();
+	using var inspector = new CdpInspector(fetcher, new WebSocketRawDuplexFactory());
+	var watch = System.Diagnostics.Stopwatch.StartNew();
+	var drops = 0;
+	while (watch.Elapsed.TotalSeconds < seconds)
+	{
+		try
+		{
+			if (!inspector.IsConnected) await inspector.ConnectAsync(CancellationToken.None);
+			await inspector.EvaluateAsync(InspectorScripts.Catalog, CancellationToken.None);
+		}
+		catch (SynapseInspectorException ex)
+		{
+			drops++;
+			Console.WriteLine($"{watch.Elapsed.TotalSeconds,6:F1}s drop: {ex.Code} {ex.Message} {ex.InnerException?.GetType().Name}: {ex.InnerException?.Message}");
+		}
+		await Task.Delay(2000);
+	}
+	Console.WriteLine($"{drops} drop(s) in {seconds}s");
+	return 0;
+}
+
+Console.WriteLine("Usage: ManualInspectorCheck --dump <path> | --roundtrip | --soak <seconds>");
 return 2;

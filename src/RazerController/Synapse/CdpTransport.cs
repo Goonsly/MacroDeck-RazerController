@@ -54,6 +54,10 @@ internal sealed class WebSocketRawDuplexFactory : IRawDuplexFactory
 		// Same reason as the HTTP half: this handshake carries a code-execution session.
 		socket.Options.Proxy = null;
 
+		// Synapse's Node inspector drops the connection on a WebSocket ping, and .NET pings every 30 s by
+		// default. The 2 s catalog refresh keeps the session busy, so no keep-alive is needed.
+		socket.Options.KeepAliveInterval = TimeSpan.Zero;
+
 		try
 		{
 			await socket.ConnectAsync(webSocketDebuggerUrl, cancellationToken).ConfigureAwait(false);
