@@ -34,6 +34,9 @@ internal sealed class SynapseService : BackgroundService
 
 	public SynapseStatus Status => (SynapseStatus)Volatile.Read(ref _status);
 
+	/// <summary>Synapse answers, even if a given device is not there; a missing device is then NotFound, not "Synapse unavailable".</summary>
+	public bool IsReachable => (Status is SynapseStatus.Ready or SynapseStatus.NoDevices or SynapseStatus.SynapseUnrecognised) && _inspector.IsConnected;
+
 	public IReadOnlyList<RazerDeviceInfo> Devices => Volatile.Read(ref _devices);
 
 	public string? SynapseVersion { get; private set; }
@@ -66,12 +69,18 @@ internal sealed class SynapseService : BackgroundService
 			_inspector.Disconnect();
 			SetStatus(ex.Code == "incompatible_synapse" ? SynapseStatus.InspectorUntrusted : SynapseStatus.InspectorUnavailable, ex.Message);
 		}
+		catch (Exception ex) when (ex is not OperationCanceledException)
+		{
+			// Synapse's storage is not a contract; an unexpected shape must not end the refresh loop.
+			_logger.Error(ex, "Could not read Synapse's device catalog");
+			SetStatus(SynapseStatus.SynapseUnrecognised, ex.Message);
+		}
 	}
 
 	public async Task<CommandOutcome> SendAndConfirmAsync(
 		string serial, string eventType, object payload, Func<RazerDeviceInfo, bool> isApplied, CancellationToken cancellationToken)
 	{
-		if (Status != SynapseStatus.Ready || !_inspector.IsConnected) return CommandOutcome.NotConnected;
+		if (!IsReachable) return CommandOutcome.NotConnected;
 
 		var gate = _deviceGates.GetOrAdd(serial, _ => new SemaphoreSlim(1, 1));
 		await gate.WaitAsync(cancellationToken).ConfigureAwait(false);

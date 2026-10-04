@@ -88,6 +88,20 @@ public sealed class ActionTests
 	}
 
 	[Test]
+	public async Task Switch_fails_with_NotFound_when_the_last_device_is_unplugged()
+	{
+		var (harness, fake, synapse, _) = await ReadyAsync();
+		await using var _h = harness;
+		fake.UnplugAll();
+		await synapse.RefreshAsync(default);
+
+		var outcome = await harness.Actions.ExecuteAsync("switch-profile", P(("device", Mouse), ("mode", "next")));
+
+		Assert.That(synapse.Status, Is.EqualTo(SynapseStatus.NoDevices));
+		Assert.That(ErrorCode(outcome), Is.EqualTo(ActionErrorCodes.NotFound));
+	}
+
+	[Test]
 	public async Task Switch_fails_for_a_deleted_profile()
 	{
 		var (harness, fake, _, _) = await ReadyAsync();

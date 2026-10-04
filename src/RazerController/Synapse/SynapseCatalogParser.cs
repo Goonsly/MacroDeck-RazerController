@@ -28,7 +28,7 @@ internal static class SynapseCatalogParser
 
 		foreach (var window in windows.EnumerateArray())
 		{
-			if (!window.TryGetProperty("productId", out var pidValue) || !pidValue.TryGetInt32(out var productId)) continue;
+			if (ReadInt(window, "productId") is not { } productId) continue;
 
 			var channel = ReadString(window, "title");
 			if (string.IsNullOrEmpty(channel)) continue;
@@ -98,7 +98,7 @@ internal static class SynapseCatalogParser
 	private static LightingEffect? ReadEffect(JsonElement profile)
 	{
 		if (!profile.TryGetProperty("quickEffects", out var effects) || effects.ValueKind != JsonValueKind.Object) return null;
-		if (!effects.TryGetProperty("selectedEffectId", out var id) || !id.TryGetInt32(out var effectId)) return null;
+		if (ReadInt(effects, "selectedEffectId") is not { } effectId) return null;
 
 		var color = effects.TryGetProperty("selectedEffectSetting", out var setting) ? ReadString(setting, "color1") : null;
 		return new LightingEffect(effectId, color);
@@ -108,7 +108,7 @@ internal static class SynapseCatalogParser
 	{
 		if (!profile.TryGetProperty("gamingMode", out var mode) || mode.ValueKind != JsonValueKind.Object) return null;
 
-		var on = mode.TryGetProperty("state", out var state) && state.TryGetInt32(out var value) && value > 0;
+		var on = ReadInt(mode, "state") > 0;
 		return new GamingModeState(on, mode.Clone());
 	}
 
@@ -119,9 +119,7 @@ internal static class SynapseCatalogParser
 		foreach (var entry in list.EnumerateArray())
 		{
 			if (entry.ValueKind == JsonValueKind.Object
-				&& entry.TryGetProperty("productId", out var pid)
-				&& pid.TryGetInt32(out var value)
-				&& value == productId)
+				&& ReadInt(entry, "productId") == productId)
 			{
 				return entry;
 			}
@@ -144,6 +142,15 @@ internal static class SynapseCatalogParser
 			return null;
 		}
 	}
+
+	// JsonElement.TryGetInt32 throws on a non-number, so the kind is checked first.
+	private static int? ReadInt(JsonElement element, string property) =>
+		element.ValueKind == JsonValueKind.Object
+		&& element.TryGetProperty(property, out var value)
+		&& value.ValueKind == JsonValueKind.Number
+		&& value.TryGetInt32(out var number)
+			? number
+			: null;
 
 	private static string? ReadString(JsonElement element, string property) =>
 		element.ValueKind == JsonValueKind.Object

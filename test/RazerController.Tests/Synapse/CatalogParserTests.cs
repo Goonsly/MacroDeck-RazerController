@@ -92,6 +92,29 @@ public sealed class CatalogParserTests
 	}
 
 	[Test]
+	public void Non_numeric_values_where_numbers_are_expected_do_not_throw()
+	{
+		var doc = JsonSerializer.Serialize(new
+		{
+			category = "KEYBOARD",
+			activeProfile = "g",
+			profiles = new[] { new { guid = "g", name = "n", quickEffects = new { selectedEffectId = "3" }, gamingMode = new { state = true } } },
+			deviceMetadatas = new Dictionary<string, object> { ["SER"] = new { name = "Kb" } },
+		});
+		var json = JsonSerializer.Serialize(new
+		{
+			version = "4",
+			windows = new[] { new { productId = 600, title = "t" } },
+			storage = new { connectedDeviceInfo = """[{"productId":"600"}]""", devices = new Dictionary<string, string> { ["600"] = doc } },
+		});
+
+		var device = SynapseCatalogParser.Parse(Fixture.Parse(json)).Devices.Single();
+
+		Assert.That(device.Effect, Is.Null);
+		Assert.That(device.GamingMode!.On, Is.False);
+	}
+
+	[Test]
 	public void A_device_without_any_serial_is_skipped()
 	{
 		var doc = """{"category":"MOUSE","activeProfile":"g","profiles":[{"guid":"g","name":"n"}]}""";

@@ -70,6 +70,11 @@ internal sealed class FakeInspector : IInspector
 
 	public void ClearWindows() => _snapshot["windows"] = new JsonArray();
 
+	public void UnplugAll()
+	{
+		foreach (var pid in new[] { "103", "554" }) _snapshot["storage"]!["devices"]![pid] = null;
+	}
+
 	public void SetActiveProfile(int productId, string guid) => EditDocument(productId, doc => doc["activeProfile"] = guid);
 
 	public void EditActiveProfile(int productId, Action<JsonObject> edit) => EditDocument(productId, doc =>

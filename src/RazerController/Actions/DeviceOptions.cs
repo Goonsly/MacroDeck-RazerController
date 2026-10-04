@@ -48,7 +48,7 @@ internal static class DeviceOptions
 	/// <summary>Resolves the button's device, or the failure to report when it cannot be used.</summary>
 	public static (RazerDeviceInfo? Device, ActionResult? Failure) Resolve(SynapseService synapse, IReadOnlyDictionary<string, object> parameters)
 	{
-		if (synapse.Status != SynapseStatus.Ready)
+		if (!synapse.IsReachable)
 		{
 			return (null, ActionResult.Failed(ActionErrorCodes.NotConnected, Strings.Actions.Errors.SynapseUnavailable()));
 		}
