@@ -14,7 +14,7 @@ if (args is ["--dump", var path])
 	await inspector.ConnectAsync(CancellationToken.None);
 
 	var snapshot = await inspector.EvaluateAsync(InspectorScripts.Catalog, CancellationToken.None);
-	var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
+	var json = JsonSerializer.Serialize(TrimToParsedFields(snapshot), new JsonSerializerOptions { WriteIndented = true });
 
 	var serials = new Dictionary<string, string>();
 	json = Regex.Replace(json, @"(PM\d{4}F\d{8,}|\d{6}H\d{8})", m =>
@@ -99,3 +99,40 @@ if (args is ["--soak", var secondsText] && int.TryParse(secondsText, out var sec
 
 Console.WriteLine("Usage: ManualInspectorCheck --dump <path> | --roundtrip | --soak <seconds>");
 return 2;
+
+// The fixture is committed to a public repository, so it keeps only what SynapseCatalogParser reads:
+// keybinds, macros, calibration and the rest of each profile stay out.
+static System.Text.Json.Nodes.JsonNode? TrimToParsedFields(JsonElement? snapshot)
+{
+	var root = snapshot is { } value ? System.Text.Json.Nodes.JsonNode.Parse(value.GetRawText()) : null;
+	if (root?["storage"]?["devices"] is not System.Text.Json.Nodes.JsonObject devices) return root;
+
+	foreach (var (pid, raw) in devices.ToList())
+	{
+		if (raw is null) continue;
+		var doc = System.Text.Json.Nodes.JsonNode.Parse(raw.GetValue<string>())!.AsObject();
+		var profiles = new System.Text.Json.Nodes.JsonArray();
+		foreach (var profile in doc["profiles"]?.AsArray() ?? [])
+		{
+			var kept = new System.Text.Json.Nodes.JsonObject();
+			foreach (var key in new[] { "guid", "name", "quickEffects", "gamingMode" })
+			{
+				if (profile?[key] is { } field) kept[key] = field.DeepClone();
+			}
+
+			profiles.Add(kept);
+		}
+
+		var trimmed = new System.Text.Json.Nodes.JsonObject
+		{
+			["productId"] = doc["productId"]?.DeepClone(),
+			["category"] = doc["category"]?.DeepClone(),
+			["activeProfile"] = doc["activeProfile"]?.DeepClone(),
+			["profiles"] = profiles,
+			["deviceMetadatas"] = doc["deviceMetadatas"]?.DeepClone(),
+		};
+		devices[pid] = trimmed.ToJsonString();
+	}
+
+	return root;
+}
