@@ -6,6 +6,8 @@
 		<AssemblyName>RazerController</AssemblyName>
 		<RootNamespace>KeystoneDigital.RazerController</RootNamespace>
 		<IsPackable>false</IsPackable>
+		<!-- LibraryImport source generation for the HID P/Invokes. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<UserSecretsId>RazerController-PluginDevelopment</UserSecretsId>
 	</PropertyGroup>
 
