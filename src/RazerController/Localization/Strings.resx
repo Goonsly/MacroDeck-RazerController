@@ -154,4 +154,25 @@
   <data name="Actions.Errors.MouseFailed" xml:space="preserve">
     <value>The Razer mouse did not accept the change.</value>
   </data>
+  <data name="Settings.Inspector.Title" xml:space="preserve">
+    <value>Synapse control</value>
+  </data>
+  <data name="Settings.Inspector.Description" xml:space="preserve">
+    <value>Profile switching, lighting and gaming mode drive Razer Synapse through its local debugging port. Turning this on adds --inspect=127.0.0.1:9229 to Synapse's Windows startup entry. Takes effect the next time Synapse starts. Currently: {flag}. Plugin status: {status}.</value>
+  </data>
+  <data name="Settings.Inspector.SecurityWarning" xml:space="preserve">
+    <value>While this is on, any program running on this PC can control Razer Synapse through that port. Mouse DPI works without it.</value>
+  </data>
+  <data name="Settings.Inspector.Enabled.Label" xml:space="preserve">
+    <value>Enable Synapse control</value>
+  </data>
+  <data name="Settings.Inspector.On" xml:space="preserve">
+    <value>on</value>
+  </data>
+  <data name="Settings.Inspector.Off" xml:space="preserve">
+    <value>off</value>
+  </data>
+  <data name="Settings.Inspector.NotInstalled" xml:space="preserve">
+    <value>Razer Synapse's startup entry was not found. Install Razer Synapse 4 and let it start once.</value>
+  </data>
 </root>

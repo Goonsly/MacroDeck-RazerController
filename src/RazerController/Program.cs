@@ -2,10 +2,14 @@ using KeystoneDigital.RazerController;
 using MacroDeck.Plugin.Hosting;
 using MacroDeck.Plugin.Serilog;
 
-var plugin = MacroDeckPlugin.CreatePlugin(args)
+var builder = MacroDeckPlugin.CreatePlugin(args)
 	.UseMacroDeckLogging()
-	.UseLocalization(Strings.LocalizationCatalog)
-	.RegisterIntegration<RazerIntegration>()
+	.UseLocalization(Strings.LocalizationCatalog);
+
+builder.Services.AddRazerServices();
+
+var plugin = builder
+	.RegisterIntegration(RazerIntegration.Create)
 	.Build();
 
 await plugin.RunAsync();

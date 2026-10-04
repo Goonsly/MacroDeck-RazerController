@@ -4,11 +4,15 @@ using KeystoneDigital.RazerController.Hid;
 using KeystoneDigital.RazerController.Synapse;
 using MacroDeck.Sdk;
 using MacroDeck.Sdk.Actions;
+using MacroDeck.Sdk.ConfigFlow;
+using MacroDeck.Sdk.Variables;
+using KeystoneDigital.RazerController.Settings;
+using KeystoneDigital.RazerController.Variables;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KeystoneDigital.RazerController;
 
-public sealed class RazerIntegration : IPluginIntegration
+public sealed class RazerIntegration : IPluginIntegration, IVariableProvider, IConfigFlowProvider
 {
 	private readonly MouseDpiService _dpi;
 
@@ -41,4 +45,15 @@ public sealed class RazerIntegration : IPluginIntegration
 	public Task InitializeAsync(IIntegrationContext context) => _dpi.RefreshAsync(CancellationToken.None);
 
 	public Task ShutdownAsync() => Task.CompletedTask;
+
+	public IReadOnlyList<VariableDefinition> Variables => RazerVariables.Definitions;
+
+	public ValueTask<VariableReading> ReadAsync(string localId, CancellationToken cancellationToken = default) =>
+		ValueTask.FromResult(RazerVariables.Read(localId, Synapse, _dpi));
+
+	public bool RequiresConfiguration => false;
+
+	public bool AllowsMultipleConfigurations => false;
+
+	public IConfigFlow CreateConfigFlow() => new InspectorConfigFlow(Autostart, Synapse);
 }
