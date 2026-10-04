@@ -1,13 +1,44 @@
+using KeystoneDigital.RazerController.Actions;
+using KeystoneDigital.RazerController.Autostart;
+using KeystoneDigital.RazerController.Hid;
+using KeystoneDigital.RazerController.Synapse;
 using MacroDeck.Sdk;
 using MacroDeck.Sdk.Actions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KeystoneDigital.RazerController;
 
 public sealed class RazerIntegration : IPluginIntegration
 {
-	public IReadOnlyList<IActionDefinition> Actions { get; } = [];
+	private readonly MouseDpiService _dpi;
 
-	public Task InitializeAsync(IIntegrationContext context) => Task.CompletedTask;
+	internal RazerIntegration(SynapseService synapse, MouseDpiService dpi, IAutostartRegistry autostart)
+	{
+		_dpi = dpi;
+		Synapse = synapse;
+		Autostart = autostart;
+		Actions =
+		[
+			new SwitchProfileAction(synapse),
+			new LightingEffectAction(synapse),
+			new GamingModeAction(synapse),
+			new StepDpiAction(dpi),
+			new TemporaryDpiAction(dpi),
+		];
+	}
+
+	public IReadOnlyList<IActionDefinition> Actions { get; }
+
+	internal SynapseService Synapse { get; }
+
+	internal IAutostartRegistry Autostart { get; }
+
+	public static RazerIntegration Create(IServiceProvider services) => new(
+		services.GetRequiredService<SynapseService>(),
+		services.GetRequiredService<MouseDpiService>(),
+		services.GetRequiredService<IAutostartRegistry>());
+
+	public Task InitializeAsync(IIntegrationContext context) => _dpi.RefreshAsync(CancellationToken.None);
 
 	public Task ShutdownAsync() => Task.CompletedTask;
 }
