@@ -33,11 +33,25 @@ internal sealed class SwitchProfileAction(SynapseService synapse) : IDynamicOpti
 			required: true),
 		ActionParameter.DynamicChoice(ProfileParameter, label: Strings.Actions.SwitchProfile.Profile.Label())
 			.OnlyWhen(ModeParameter, "profile"),
-		ActionParameter.MultiSelect(ProfilesParameter, [], label: Strings.Actions.SwitchProfile.Profiles.Label(), optionsSourceId: ProfilesParameter)
-			.OnlyWhen(ModeParameter, "cycle"),
+		ProfileList(),
 	];
 
 	public MacroDeckPlatform Platforms => MacroDeckPlatform.Windows;
+
+	// No optionsSourceId: the host reads that as the name of one of its own sources. With no static
+	// options and DynamicOptions set, the host asks GetDynamicOptionsAsync instead.
+	private static ActionParameter ProfileList()
+	{
+		var parameter = new ActionParameter
+		{
+			Name = ProfilesParameter,
+			Type = ActionParameterType.MultiSelect,
+			Label = Strings.Actions.SwitchProfile.Profiles.Label(),
+			Options = [],
+			DynamicOptions = true,
+		};
+		return parameter.OnlyWhen(ModeParameter, "cycle");
+	}
 
 	public IActionExecutor CreateExecutor() => new Executor(synapse);
 

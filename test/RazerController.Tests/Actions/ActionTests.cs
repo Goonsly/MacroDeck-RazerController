@@ -365,6 +365,25 @@ public sealed class ActionTests
 	}
 
 	[Test]
+	public void Every_dynamic_parameter_is_served_by_the_plugin_not_a_host_source()
+	{
+		var synapse = SynapseServiceTests.CreateService(FakeInspector.FromFixture());
+		var integration = new RazerIntegration(synapse, MouseDpiServiceTests.ServiceFor(null), new FakeAutostartRegistry(null));
+
+		var dynamic = integration.Actions
+			.SelectMany(action => action.Parameters.Select(parameter => (action.Id, parameter)))
+			.Where(x => x.parameter.Type is ActionParameterType.DynamicChoice or ActionParameterType.MultiSelect)
+			.ToList();
+
+		Assert.That(dynamic, Is.Not.Empty);
+		foreach (var (actionId, parameter) in dynamic)
+		{
+			Assert.That(parameter.OptionsSourceId, Is.Null, $"{actionId}/{parameter.Name}");
+			Assert.That(parameter.DynamicOptions, Is.True, $"{actionId}/{parameter.Name}");
+		}
+	}
+
+	[Test]
 	public async Task Device_options_keep_a_disconnected_serial_selectable()
 	{
 		var (harness, _, _, _) = await ReadyAsync();
