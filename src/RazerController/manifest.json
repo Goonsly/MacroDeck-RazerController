@@ -17,5 +17,5 @@
   "compatibility": {
     "macroDeck": ">=3.0.0-0"
   },
-  "permissions": ["device:usb", "process:spawn"]
+  "permissions": ["device:usb"]
 }
