@@ -17,5 +17,3 @@ jobs:
       version: ${{ github.event.release.tag_name }}
       source: src/RazerController
       changelog: ${{ github.event.release.body }}
-      # Windows-only plugin (HID, registry, WMI): build and test on a Windows runner.
-      build-per-platform: true
