@@ -23,9 +23,10 @@ Checked against Creator Guidelines **version 6** and the SDK policy on 2026-10-1
 | Publication validation | Done: 0 errors, 0 warnings (`macrodeck-plugin validate --artifact ... --level Publication`) |
 | Conformance | Done: 32 passed, 0 failed, 17 skipped (beta.17 CLI) |
 | Tested on real hardware by the publisher (rule 6) | Done: Naga Trinity and Cynosa Chroma, Synapse 4.0.827 |
-| Screenshots of real use (rule 10) | **You** |
-| Creator Portal project and GitHub connection | **You** |
-| Release `v1.0.0` | Me, after the Portal is connected |
+| Screenshots of real use (rule 10) | Done |
+| Creator Portal project and GitHub connection | Done: organization Keystone Digital, repo keystonedigitalinc/MacroDeck-RazerController |
+| Release `v1.0.0` | Done: built and accepted by the Platform on 2026-10-16 (run 38946903872) |
+| Submitted for review | Done: 2026-10-16 |
 
 ## Your steps in the Creator Portal
 
@@ -66,3 +67,9 @@ Crop out the desktop and anything unrelated.
 - **AI-assisted code (rule 6).** It is allowed. You, as publisher, must be able to explain, debug and maintain the code. `docs/superpowers/` holds the design and plan, and every part has tests.
 - **The icon (rule 10).** A neon-green gaming mouse over a key cluster, with a sync badge for switching profiles. No Razer or Macro Deck logo. It was generated with AI and is declared in the manifest and the Portal. The source is in `docs/branding/icon-source.png`; the package ships a 512 px copy.
 - **Synapse updates.** These can change its internal messages. If profiles stop working after an update, `razer_status` shows `synapse_unrecognised`. Fix it and ship a new version, because approved versions are final.
+
+## Release workflow lessons
+
+- **Single platform:** do not set `build-per-platform: true` while the manifest declares only one platform. In `publish-plugin.yml@v1` the merge job then finds no per-platform folder ("No platform packages were handed over").
+- **CLI version:** pin `cli-version` to the Platform's minimum CLI. The workflow's default CLI is older, and the Platform refuses it.
+- **Next version:** for a fix after review, bump nothing in the repository. Publish GitHub release `v1.0.1`, because the tag sets the version.
