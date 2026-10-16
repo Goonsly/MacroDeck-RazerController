@@ -68,8 +68,31 @@ public sealed class VariablesAndSettingsTests
 		Assert.That(ValueOf(await harness.Variables.GetAsync("mouse-dpi")), Is.Null);
 	}
 
-	private static InspectorConfigFlow Flow(FakeAutostartRegistry registry) =>
-		new(registry, SynapseServiceTests.CreateService(FakeInspector.FromFixture()));
+	private sealed class MemoryIntent : ISynapseControlIntent
+	{
+		public bool? Value { get; private set; }
+
+		public bool? Get() => Value;
+
+		public void Set(bool enabled) => Value = enabled;
+	}
+
+	private static InspectorConfigFlow Flow(FakeAutostartRegistry registry, MemoryIntent? intent = null) =>
+		new(registry, SynapseServiceTests.CreateService(FakeInspector.FromFixture()), intent ?? new MemoryIntent());
+
+	[Test]
+	public async Task Config_flow_records_the_users_choice()
+	{
+		var intent = new MemoryIntent();
+		var flow = Flow(new FakeAutostartRegistry(RunValue), intent);
+
+		await flow.SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = true }, null!, default);
+		var afterOn = intent.Value;
+		await flow.SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = false }, null!, default);
+
+		Assert.That(afterOn, Is.True);
+		Assert.That(intent.Value, Is.False);
+	}
 
 	[Test]
 	public async Task Config_flow_offers_the_current_flag_state()

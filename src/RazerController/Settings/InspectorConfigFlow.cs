@@ -10,7 +10,7 @@ namespace KeystoneDigital.RazerController.Settings;
 /// The one setting: whether Synapse's HKCU startup entry carries the inspector flag. The flow writes
 /// the registry itself because the flag lives there, not in Macro Deck's config.
 /// </summary>
-internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseService synapse) : IConfigFlow
+internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseService synapse, ISynapseControlIntent intent) : IConfigFlow
 {
 	public const string InspectFlag = "--inspect=127.0.0.1:9229";
 
@@ -29,6 +29,7 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 		}
 
 		var enable = ReadBool(input, EnabledField);
+		intent.Set(enable);
 		var updated = enable ? AutostartCommandLine.AppendFlag(current, InspectFlag) : AutostartCommandLine.RemoveFlag(current, InspectFlag);
 		if (updated != current) registry.SetValue(updated);
 

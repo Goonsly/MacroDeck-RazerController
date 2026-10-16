@@ -17,6 +17,8 @@ Tested on a Razer Naga Trinity and a Razer Cynosa Chroma with Synapse 4.0.827.
 
 Mouse DPI works without step 3. Profiles, lighting and gaming mode need it.
 
+Synapse sometimes rewrites its own startup entry and drops the flag. While Synapse control is on, the plugin checks every 30 seconds, puts the flag back, and restarts Synapse once if it is running without it. At most one restart happens every 10 minutes. Turning Synapse control off in the settings stops this.
+
 ## Security
 
 Synapse control adds `--inspect=127.0.0.1:9229` to Synapse's Windows startup entry, under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. That opens Synapse's Node debugging port on this PC only. While it is on, **any program running on this PC can control Razer Synapse** through that port. The plugin connects only to `127.0.0.1` and checks that the port belongs to `RazerAppEngine.exe` before using it. Turn the setting off to remove the flag.

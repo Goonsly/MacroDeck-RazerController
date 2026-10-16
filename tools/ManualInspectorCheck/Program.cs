@@ -97,7 +97,14 @@ if (args is ["--soak", var secondsText] && int.TryParse(secondsText, out var sec
 	return 0;
 }
 
-Console.WriteLine("Usage: ManualInspectorCheck --dump <path> | --roundtrip | --soak <seconds>");
+//   --synapse-state  read-only: is Synapse running, and with the inspector flag?
+if (args is ["--synapse-state"])
+{
+	Console.WriteLine(new KeystoneDigital.RazerController.Autostart.WindowsSynapseProcess().GetState());
+	return 0;
+}
+
+Console.WriteLine("Usage: ManualInspectorCheck --dump <path> | --roundtrip | --soak <seconds> | --synapse-state");
 return 2;
 
 // The fixture is committed to a public repository, so it keeps only what SynapseCatalogParser reads:

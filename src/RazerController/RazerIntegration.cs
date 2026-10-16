@@ -16,8 +16,9 @@ public sealed class RazerIntegration : IPluginIntegration, IVariableProvider, IC
 {
 	private readonly MouseDpiService _dpi;
 
-	internal RazerIntegration(SynapseService synapse, MouseDpiService dpi, IAutostartRegistry autostart)
+	internal RazerIntegration(SynapseService synapse, MouseDpiService dpi, IAutostartRegistry autostart, ISynapseControlIntent intent)
 	{
+		Intent = intent;
 		_dpi = dpi;
 		Synapse = synapse;
 		Autostart = autostart;
@@ -37,10 +38,13 @@ public sealed class RazerIntegration : IPluginIntegration, IVariableProvider, IC
 
 	internal IAutostartRegistry Autostart { get; }
 
+	internal ISynapseControlIntent Intent { get; }
+
 	public static RazerIntegration Create(IServiceProvider services) => new(
 		services.GetRequiredService<SynapseService>(),
 		services.GetRequiredService<MouseDpiService>(),
-		services.GetRequiredService<IAutostartRegistry>());
+		services.GetRequiredService<IAutostartRegistry>(),
+		services.GetRequiredService<ISynapseControlIntent>());
 
 	public Task InitializeAsync(IIntegrationContext context) => _dpi.RefreshAsync(CancellationToken.None);
 
@@ -55,5 +59,5 @@ public sealed class RazerIntegration : IPluginIntegration, IVariableProvider, IC
 
 	public bool AllowsMultipleConfigurations => false;
 
-	public IConfigFlow CreateConfigFlow() => new InspectorConfigFlow(Autostart, Synapse);
+	public IConfigFlow CreateConfigFlow() => new InspectorConfigFlow(Autostart, Synapse, Intent);
 }

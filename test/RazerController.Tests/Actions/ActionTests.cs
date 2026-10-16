@@ -15,7 +15,7 @@ public sealed class ActionTests
 	private const string Mouse = FakeInspector.MouseSerial;
 	private const string Keyboard = FakeInspector.KeyboardSerial;
 
-	internal static PluginTestHarness CreateHarness(SynapseService synapse, MouseDpiService dpi, Autostart.IAutostartRegistry? registry = null) =>
+	internal static PluginTestHarness CreateHarness(SynapseService synapse, MouseDpiService dpi, KeystoneDigital.RazerController.Autostart.IAutostartRegistry? registry = null) =>
 		PluginTestHarness.Create(builder =>
 		{
 			builder.Services.AddRazerServices(synapse, dpi, registry ?? new FakeAutostartRegistry(null));
@@ -368,7 +368,7 @@ public sealed class ActionTests
 	public void Every_dynamic_parameter_is_served_by_the_plugin_not_a_host_source()
 	{
 		var synapse = SynapseServiceTests.CreateService(FakeInspector.FromFixture());
-		var integration = new RazerIntegration(synapse, MouseDpiServiceTests.ServiceFor(null), new FakeAutostartRegistry(null));
+		var integration = new RazerIntegration(synapse, MouseDpiServiceTests.ServiceFor(null), new FakeAutostartRegistry(null), new KeystoneDigital.RazerController.Autostart.FileSynapseControlIntent(Path.GetTempPath()));
 
 		var dynamic = integration.Actions
 			.SelectMany(action => action.Parameters.Select(parameter => (action.Id, parameter)))

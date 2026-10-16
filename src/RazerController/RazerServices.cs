@@ -17,7 +17,13 @@ internal static class RazerServices
 		services.AddSingleton(sp => new SynapseService(sp.GetRequiredService<IInspector>(), sp.GetRequiredService<ILogger>()));
 		services.AddSingleton(sp => MouseDpiService.CreateDefault(sp.GetRequiredService<ILogger>()));
 		services.AddSingleton<IAutostartRegistry, WindowsAutostartRegistry>();
+		services.AddSingleton<ISynapseControlIntent>(_ => FileSynapseControlIntent.FromEnvironment());
+		services.AddSingleton<ISynapseProcess, WindowsSynapseProcess>();
+		services.AddSingleton(sp => new InspectorGuard(
+			sp.GetRequiredService<IAutostartRegistry>(), sp.GetRequiredService<ISynapseControlIntent>(), sp.GetRequiredService<ISynapseProcess>(),
+			sp.GetRequiredService<ILogger>(), TimeProvider.System));
 		services.AddHostedService(sp => sp.GetRequiredService<SynapseService>());
+		services.AddHostedService(sp => new InspectorGuardService(sp.GetRequiredService<InspectorGuard>(), sp.GetRequiredService<SynapseService>(), sp.GetRequiredService<ILogger>()));
 		services.AddHostedService(sp => new MouseDpiPoller(sp.GetRequiredService<MouseDpiService>(), TimeSpan.FromSeconds(2)));
 		return services;
 	}
@@ -28,6 +34,7 @@ internal static class RazerServices
 		services.AddSingleton(synapse);
 		services.AddSingleton(dpi);
 		services.AddSingleton(autostart);
+		services.AddSingleton<ISynapseControlIntent>(new FileSynapseControlIntent(Path.Combine(Path.GetTempPath(), "razer-tests-" + Guid.NewGuid().ToString("N"))));
 		return services;
 	}
 }
