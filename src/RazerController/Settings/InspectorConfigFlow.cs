@@ -31,10 +31,20 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 		var enable = ReadBool(input, EnabledField);
 		intent.Set(enable);
 		var updated = enable ? AutostartCommandLine.AppendFlag(current, InspectFlag) : AutostartCommandLine.RemoveFlag(current, InspectFlag);
-		if (updated != current) registry.SetValue(updated);
+		if (updated != current)
+		{
+			try
+			{
+				registry.SetValue(updated);
+			}
+			catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+			{
+				return Task.FromResult(ConfigFlowResult.Error(BuildStep(), Strings.Settings.Inspector.WriteFailed(), new Dictionary<string, MacroDeck.Localization.LocalizedText>()));
+			}
+		}
 
 		return Task.FromResult(ConfigFlowResult.Complete(
-			"Razer Controller",
+			"Synapse Control for Razer",
 			new Dictionary<string, ConfigFlowValue> { [EnabledField] = ConfigFlowValue.Plain(enable ? "true" : "false") }));
 	}
 

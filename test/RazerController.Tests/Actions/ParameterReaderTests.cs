@@ -48,6 +48,11 @@ public sealed class ParameterReaderTests
 	[Test]
 	public void Int_reads_a_json_number() => Assert.That(ParameterReader.Int(With(Json("800")), "p"), Is.EqualTo(800));
 
+	[TestCase(5_000_000_000L)]
+	[TestCase(-5_000_000_000L)]
+	[TestCase(1e12)]
+	public void Int_is_null_when_out_of_range(object value) => Assert.That(ParameterReader.Int(With(value), "p"), Is.Null);
+
 	[Test]
 	public void Int_is_null_for_garbage() => Assert.That(ParameterReader.Int(With("lots"), "p"), Is.Null);
 

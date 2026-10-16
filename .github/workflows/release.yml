@@ -1,0 +1,21 @@
+name: Release
+
+# Publishing a GitHub release builds the plugin with Macro Deck's official workflow, runs the tests and
+# the conformance suite, and uploads the build to the Creator Portal. No secrets: the workflow signs in
+# with the token GitHub issues for the run.
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    uses: Macro-Deck-App/GitHub-Actions/.github/workflows/publish-plugin.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      version: ${{ github.event.release.tag_name }}
+      source: src/RazerController
+      changelog: ${{ github.event.release.body }}
+      # Windows-only plugin (HID, registry, WMI): build and test on a Windows runner.
+      build-per-platform: true

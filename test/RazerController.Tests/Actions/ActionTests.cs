@@ -396,6 +396,18 @@ public sealed class ActionTests
 	}
 
 	[Test]
+	public async Task Profile_options_keep_a_deleted_profile_visible()
+	{
+		var (harness, _, _, _) = await ReadyAsync();
+		await using var _h = harness;
+		const string gone = "00000000-dead-beef-0000-000000000000";
+
+		var outcome = await harness.Actions.GetOptionsAsync("switch-profile", "profile", null, P(("device", Mouse), ("profile", gone)));
+
+		Assert.That(OptionValues(outcome), Does.Contain(gone));
+	}
+
+	[Test]
 	public async Task Gaming_device_options_list_only_devices_with_gaming_mode()
 	{
 		var (harness, _, _, _) = await ReadyAsync();

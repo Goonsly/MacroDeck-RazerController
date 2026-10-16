@@ -33,9 +33,9 @@ internal static class ParameterReader
 		return value switch
 		{
 			int number => number,
-			long number => (int)number,
-			double number when !double.IsNaN(number) => (int)Math.Round(number),
-			JsonElement { ValueKind: JsonValueKind.Number } json when json.TryGetDouble(out var number) => (int)Math.Round(number),
+			long number => number is >= int.MinValue and <= int.MaxValue ? (int)number : null,
+			double number => InRange(number),
+			JsonElement { ValueKind: JsonValueKind.Number } json when json.TryGetDouble(out var number) => InRange(number),
 			_ => int.TryParse(String(parameters, name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : null,
 		};
 	}
@@ -53,6 +53,9 @@ internal static class ParameterReader
 			_ => [],
 		};
 	}
+
+	private static int? InRange(double number) =>
+		double.IsFinite(number) && Math.Round(number) is >= int.MinValue and <= int.MaxValue ? (int)Math.Round(number) : null;
 
 	private static List<string> FromText(string? text)
 	{

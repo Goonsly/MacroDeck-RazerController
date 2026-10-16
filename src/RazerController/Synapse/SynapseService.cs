@@ -118,6 +118,7 @@ internal sealed class SynapseService : BackgroundService
 			while (true)
 			{
 				await RefreshAsync(cancellationToken).ConfigureAwait(false);
+				if (!IsReachable) return CommandOutcome.NotConnected;
 				if (FindBySerial(serial) is { } current && isApplied(current)) return CommandOutcome.Applied;
 				if (DateTime.UtcNow >= deadline) break;
 

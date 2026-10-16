@@ -17,7 +17,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Integration.Name" xml:space="preserve">
-    <value>Razer Controller</value>
+    <value>Synapse Control for Razer (unofficial)</value>
   </data>
   <data name="Actions.Common.Device.Label" xml:space="preserve">
     <value>Device</value>
@@ -174,5 +174,11 @@
   </data>
   <data name="Settings.Inspector.NotInstalled" xml:space="preserve">
     <value>Razer Synapse's startup entry was not found. Install Razer Synapse 4 and let it start once.</value>
+  </data>
+  <data name="Actions.Common.ProfileMissing" xml:space="preserve">
+    <value>{profile} (missing)</value>
+  </data>
+  <data name="Settings.Inspector.WriteFailed" xml:space="preserve">
+    <value>Windows did not allow changing Razer Synapse's startup entry.</value>
   </data>
 </root>

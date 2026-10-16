@@ -45,7 +45,9 @@ internal sealed class CdpInspector : IInspector, IDisposable
 
 		try
 		{
-			Disconnect();
+			// A caller that waited on the gate may find another caller already connected.
+			if (_duplex is not null) return;
+
 
 			var rawTargets = await _targetFetcher.FetchAsync(_port, cancellationToken).ConfigureAwait(false);
 			var webSocketUrl = TargetSelection.SelectSingleNodeTarget(rawTargets, _port);

@@ -135,6 +135,23 @@ public sealed class VariablesAndSettingsTests
 		Assert.That(registry.Value, Is.Null);
 	}
 
+	private sealed class LockedRegistry(string value) : IAutostartRegistry
+	{
+		public string? GetValue() => value;
+
+		public void SetValue(string value) => throw new UnauthorizedAccessException("denied");
+	}
+
+	[Test]
+	public async Task Config_flow_reports_a_registry_it_cannot_write()
+	{
+		var flow = new InspectorConfigFlow(new LockedRegistry(RunValue), SynapseServiceTests.CreateService(FakeInspector.FromFixture()), new MemoryIntent());
+
+		var result = await flow.SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = true }, null!, default);
+
+		Assert.That(result.Kind, Is.EqualTo(ConfigFlowResultKind.Error));
+	}
+
 	[TestCase("app.exe --inspect=127.0.0.1:9229x", false)]
 	[TestCase("app.exe --inspect=127.0.0.1:9229", true)]
 	[TestCase("app.exe --a --inspect=127.0.0.1:9229 --b", true)]
