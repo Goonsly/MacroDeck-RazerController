@@ -64,5 +64,5 @@ Crop out the desktop and anything unrelated.
 
 - **The debugging port (rule 4).** Opt-in and disclosed. A moderator may still decline. The fallback is a DPI-only Store version, with the full plugin kept on GitHub for sideloading.
 - **AI-assisted code (rule 6).** It is allowed. You, as publisher, must be able to explain, debug and maintain the code. `docs/superpowers/` holds the design and plan, and every part has tests.
-- **The icon (rule 10).** A plain mouse outline in Razer green, with no Razer logo. A moderator could ask for something more recognisable. Replacing it is one SVG.
+- **The icon (rule 10).** A neon-green gaming mouse over a key cluster, with a sync badge for switching profiles. No Razer or Macro Deck logo. It was generated with AI and is declared in the manifest and the Portal. The source is in `docs/branding/icon-source.png`; the package ships a 512 px copy.
 - **Synapse updates.** These can change its internal messages. If profiles stop working after an update, `razer_status` shows `synapse_unrecognised`. Fix it and ship a new version, because approved versions are final.
