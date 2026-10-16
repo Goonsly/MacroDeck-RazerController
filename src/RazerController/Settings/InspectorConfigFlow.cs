@@ -34,7 +34,7 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 		if (updated != current) registry.SetValue(updated);
 
 		return Task.FromResult(ConfigFlowResult.Complete(
-			"Razer Controller",
+			"Synapse Control for Razer",
 			new Dictionary<string, ConfigFlowValue> { [EnabledField] = ConfigFlowValue.Plain(enable ? "true" : "false") }));
 	}
 
