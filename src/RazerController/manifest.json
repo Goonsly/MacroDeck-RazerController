@@ -19,7 +19,7 @@
     "name": "Keystone Digital"
   },
   "license": "MIT",
-  "repository": "https://github.com/Goonsly/MacroDeck-RazerController",
+  "repository": "https://github.com/keystonedigitalinc/MacroDeck-RazerController",
   "compatibility": {
     "macroDeck": ">=3.0.0-0"
   },

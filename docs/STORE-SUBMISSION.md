@@ -10,7 +10,7 @@ Checked against Creator Guidelines **version 6** and the SDK policy on 2026-10-1
 
 | Item | State |
 | --- | --- |
-| Public GitHub repository, MIT `LICENSE` | Done: https://github.com/Goonsly/MacroDeck-RazerController |
+| Public GitHub repository, MIT `LICENSE` | Done: https://github.com/keystonedigitalinc/MacroDeck-RazerController |
 | SDK at or above the Store minimum | Done: `3.0.0-beta.17` |
 | Package ID names the developer, not Razer | Done: `com.keystonedigital.razer` |
 | Display name implies no official relationship | Done: "Synapse Control for Razer (unofficial)" |
@@ -31,7 +31,7 @@ Checked against Creator Guidelines **version 6** and the SDK policy on 2026-10-1
 
 1. Sign in at macro-deck.app and create the organization **Keystone Digital**.
 2. In that organization, create a Project of type **Plugin / Integration** with Package ID `com.keystonedigital.razer`.
-3. Under **Builds**, select **Connect GitHub**, install the Macro Deck Platform App, and choose `Goonsly/MacroDeck-RazerController`. The Portal should then find `.github/workflows/release.yml` on `main`.
+3. Under **Builds**, select **Connect GitHub**, install the Macro Deck Platform App, and choose `keystonedigitalinc/MacroDeck-RazerController`. The Portal should then find `.github/workflows/release.yml` on `main`.
 4. Fill in the Store listing: use the description below, upload 2 or 3 screenshots, and set the AI declaration to match the manifest.
 5. Tell me. I then publish GitHub release `v1.0.0`, which builds, tests, runs conformance and uploads the build.
 6. Under **Builds**, select **Create release**, then **Add to submission**, then **Submit for Review**. Consider leaving the moderator a note (see "Note for the moderator").
