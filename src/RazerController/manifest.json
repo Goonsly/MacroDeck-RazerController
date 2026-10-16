@@ -4,7 +4,7 @@
   "id": "com.keystonedigital.razer",
   "name": "Synapse Control for Razer (unofficial)",
   "version": "0.1.2",
-  "description": "Switches Synapse profiles, lighting effects and gaming mode on any Razer device, and steps or sets mouse DPI.",
+  "description": "Control Razer devices from Macro Deck while Razer Synapse 4 keeps running. Switch, step or cycle Synapse profiles on any Razer device Synapse manages, set lighting effects, toggle a keyboard's gaming mode, and step or temporarily set your mouse's DPI. Variables show the active profiles, DPI and stage, lighting effect and gaming mode.\n\nRequires: Windows, Razer Synapse 4, Macro Deck 3.\n\nSetup: open the plugin's settings and turn on Synapse control. This adds --inspect=127.0.0.1:9229 to Synapse's Windows startup entry so the plugin can use Synapse's own profile, lighting and gaming-mode commands. Synapse sometimes removes the flag; while Synapse control is on, the plugin puts it back and restarts Synapse once if needed (at most every 10 minutes). Turn the setting off to stop this. Mouse DPI works without it.\n\nSecurity: while Synapse control is on, any program on this PC can control Synapse through that port. The plugin connects only to 127.0.0.1, checks that the port belongs to Razer Synapse, and sends nothing off the PC.\n\nLimitations: lighting offers Synapse's quick effects (Off, Static with colour, Breathing, Spectrum, Wave, Reactive, Ripple, Starlight); a device may not support every one. Tested with a Razer Naga Trinity and a Razer Cynosa Chroma. Not affiliated with or endorsed by Razer Inc.",
   "icon": "Assets/icon.svg",
   "entrypoints": {
     "win-x64": {
