@@ -67,10 +67,19 @@ internal sealed class WindowsSynapseProcess : ISynapseProcess
 		var executable = AutostartCommandLine.ExtractExecutable(commandLine)
 			?? throw new InvalidOperationException("Synapse's startup entry names no executable.");
 
-		using var started = Process.Start(new ProcessStartInfo(executable, AutostartCommandLine.ExtractArguments(commandLine))
+		// Macro Deck runs each plugin inside a job object that is closed with the plugin, so a child started
+		// with Process.Start would take Synapse down on every Macro Deck restart or plugin update. A process
+		// created through WMI belongs to no job of ours and still runs in the user's desktop session.
+		using var processClass = new ManagementClass("Win32_Process");
+		using var arguments = processClass.GetMethodParameters("Create");
+		arguments["CommandLine"] = commandLine;
+		arguments["CurrentDirectory"] = Path.GetDirectoryName(executable) ?? "";
+
+		using var result = processClass.InvokeMethod("Create", arguments, null);
+		var returnValue = Convert.ToUInt32(result["ReturnValue"], System.Globalization.CultureInfo.InvariantCulture);
+		if (returnValue != 0)
 		{
-			UseShellExecute = false,
-			WorkingDirectory = Path.GetDirectoryName(executable) ?? "",
-		});
+			throw new InvalidOperationException($"Windows refused to start Synapse (Win32_Process.Create returned {returnValue}).");
+		}
 	}
 }
