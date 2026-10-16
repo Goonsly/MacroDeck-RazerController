@@ -175,4 +175,10 @@
   <data name="Settings.Inspector.NotInstalled" xml:space="preserve">
     <value>Razer Synapse's startup entry was not found. Install Razer Synapse 4 and let it start once.</value>
   </data>
+  <data name="Actions.Common.ProfileMissing" xml:space="preserve">
+    <value>{profile} (missing)</value>
+  </data>
+  <data name="Settings.Inspector.WriteFailed" xml:space="preserve">
+    <value>Windows did not allow changing Razer Synapse's startup entry.</value>
+  </data>
 </root>

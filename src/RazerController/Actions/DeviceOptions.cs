@@ -37,12 +37,18 @@ internal static class DeviceOptions
 		var serial = ParameterReader.String(context.CurrentParameters ?? new Dictionary<string, object?>(), DeviceParameter);
 		var device = serial is null ? null : synapse.FindBySerial(serial);
 
-		return new DynamicOptionsResult
+		var options = device is null
+			? []
+			: device.Profiles.Select(profile => new ActionParameterOption { Value = profile.Guid, Label = profile.Name }).ToList();
+
+		// A saved profile that was deleted in Synapse stays visible instead of silently blanking the field.
+		var current = ParameterReader.String(context.CurrentParameters ?? new Dictionary<string, object?>(), "profile");
+		if (device is not null && current is not null && options.All(option => option.Value != current))
 		{
-			Options = device is null
-				? []
-				: [.. device.Profiles.Select(profile => new ActionParameterOption { Value = profile.Guid, Label = profile.Name })],
-		};
+			options.Add(new ActionParameterOption { Value = current, Label = Strings.Actions.Common.ProfileMissing(current) });
+		}
+
+		return new DynamicOptionsResult { Options = options };
 	}
 
 	/// <summary>Resolves the button's device, or the failure to report when it cannot be used.</summary>

@@ -75,6 +75,19 @@ public sealed class SynapseServiceTests
 	}
 
 	[Test]
+	public async Task NotConnected_when_Synapse_drops_while_confirming()
+	{
+		var fake = FakeInspector.FromFixture();
+		fake.OnCommand = _ => fake.EvaluateError = new SynapseInspectorException("transport_lost", "gone");
+		var service = CreateService(fake);
+		await service.RefreshAsync(default);
+
+		var outcome = await service.SendAndConfirmAsync(FakeInspector.MouseSerial, "X", new { }, _ => false, default);
+
+		Assert.That(outcome, Is.EqualTo(CommandOutcome.NotConnected));
+	}
+
+	[Test]
 	public async Task DeviceNotFound_for_an_unknown_serial()
 	{
 		var fake = FakeInspector.FromFixture();

@@ -39,6 +39,18 @@ public sealed class InspectorTests
 	}
 
 	[Test]
+	public async Task Concurrent_connects_open_one_session()
+	{
+		var factory = new FakeDuplexFactory(new FakeDuplex());
+		using var inspector = new CdpInspector(new FakeTargetFetcher(), factory);
+
+		await Task.WhenAll(inspector.ConnectAsync(default), inspector.ConnectAsync(default));
+
+		Assert.That(factory.ConnectCount, Is.EqualTo(1));
+		Assert.That(inspector.IsConnected, Is.True);
+	}
+
+	[Test]
 	public void Connect_refuses_a_process_that_is_not_RazerAppEngine()
 	{
 		var duplex = new FakeDuplex(probe: """{"processType":"browser","electronAvailable":true,"execPath":"C:\\evil\\node.exe"}""");

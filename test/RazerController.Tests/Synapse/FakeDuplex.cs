@@ -11,8 +11,14 @@ internal sealed class FakeTargetFetcher : ICdpTargetFetcher
 
 internal sealed class FakeDuplexFactory(FakeDuplex duplex) : IRawDuplexFactory
 {
-	public Task<IRawDuplex> ConnectAsync(Uri webSocketDebuggerUrl, CancellationToken cancellationToken) =>
-		Task.FromResult<IRawDuplex>(duplex);
+	public int ConnectCount { get; private set; }
+
+	public async Task<IRawDuplex> ConnectAsync(Uri webSocketDebuggerUrl, CancellationToken cancellationToken)
+	{
+		ConnectCount++;
+		await Task.Delay(20, cancellationToken);
+		return duplex;
+	}
 }
 
 /// <summary>
