@@ -17,3 +17,5 @@ jobs:
       version: ${{ github.event.release.tag_name }}
       source: src/RazerController
       changelog: ${{ github.event.release.body }}
+      # The workflow defaults to an older CLI; the Platform refuses builds older than its minimum.
+      cli-version: 3.0.0-beta.17
