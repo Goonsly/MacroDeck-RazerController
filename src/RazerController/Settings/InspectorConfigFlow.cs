@@ -7,25 +7,26 @@ using MacroDeck.Sdk.ConfigFlow;
 namespace KeystoneDigital.RazerController.Settings;
 
 /// <summary>
-/// The one setting: whether Synapse's HKCU startup entry carries the inspector flag. The flow writes
-/// the registry itself because the flag lives there, not in Macro Deck's config.
+/// The one setting: whether Synapse control is on. This screen is the only place that changes Synapse's
+/// HKCU startup entry: on appends the inspector flag, off removes exactly that flag again.
 /// </summary>
-internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseService synapse, ISynapseControlIntent intent) : IConfigFlow
+internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseService synapse, ISynapseControlIntent intent, InspectorGuard guard, ISynapseProcess process) : IConfigFlow
 {
 	public const string InspectFlag = "--inspect=127.0.0.1:9229";
 
 	private const string StepId = "inspector";
 	private const string EnabledField = "enabled";
+	private const string RestartField = "restart";
 
 	public Task<ConfigFlowResult> StartAsync(IConfigFlowContext context, CancellationToken cancellationToken) =>
 		Task.FromResult(ConfigFlowResult.Step(BuildStep()));
 
-	public Task<ConfigFlowResult> SubmitAsync(string stepId, IReadOnlyDictionary<string, object?> input, IConfigFlowContext context, CancellationToken cancellationToken)
+	public async Task<ConfigFlowResult> SubmitAsync(string stepId, IReadOnlyDictionary<string, object?> input, IConfigFlowContext context, CancellationToken cancellationToken)
 	{
 		var current = registry.GetValue();
 		if (string.IsNullOrWhiteSpace(current))
 		{
-			return Task.FromResult(ConfigFlowResult.Error(BuildStep(), Strings.Settings.Inspector.NotInstalled(), new Dictionary<string, MacroDeck.Localization.LocalizedText>()));
+			return ConfigFlowResult.Error(BuildStep(), Strings.Settings.Inspector.NotInstalled(), new Dictionary<string, MacroDeck.Localization.LocalizedText>());
 		}
 
 		var enable = ReadBool(input, EnabledField);
@@ -39,18 +40,32 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 			}
 			catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
 			{
-				return Task.FromResult(ConfigFlowResult.Error(BuildStep(), Strings.Settings.Inspector.WriteFailed(), new Dictionary<string, MacroDeck.Localization.LocalizedText>()));
+				return ConfigFlowResult.Error(BuildStep(), Strings.Settings.Inspector.WriteFailed(), new Dictionary<string, MacroDeck.Localization.LocalizedText>());
 			}
 		}
 
-		return Task.FromResult(ConfigFlowResult.Complete(
-			"Synapse Control for Razer",
-			new Dictionary<string, ConfigFlowValue> { [EnabledField] = ConfigFlowValue.Plain(enable ? "true" : "false") }));
+		// Only when the user ticks it. Turning control off with a restart closes the debug port right away.
+		if (ReadBool(input, RestartField))
+		{
+			try
+			{
+				await process.RestartAsync(updated, cancellationToken).ConfigureAwait(false);
+			}
+			catch (Exception ex) when (ex is InvalidOperationException or System.Management.ManagementException or System.ComponentModel.Win32Exception)
+			{
+				return ConfigFlowResult.Error(BuildStep(), Strings.Settings.Inspector.RestartFailed(), new Dictionary<string, MacroDeck.Localization.LocalizedText>());
+			}
+		}
+
+		return ConfigFlowResult.Complete(
+			"Razer App Controller",
+			new Dictionary<string, ConfigFlowValue> { [EnabledField] = ConfigFlowValue.Plain(enable ? "true" : "false") });
 	}
 
 	private ConfigFlowStep BuildStep()
 	{
-		var enabled = registry.GetValue() is { } value && AutostartCommandLine.HasFlag(value, InspectFlag);
+		// Only the user's own choice counts as on. A flag someone added by hand is not consent.
+		var enabled = intent.Get() == true;
 
 		return new ConfigFlowStep
 		{
@@ -58,9 +73,17 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 			Title = Strings.Settings.Inspector.Title(),
 			Description = Strings.Settings.Inspector.Description(
 				enabled ? Strings.Settings.Inspector.On() : Strings.Settings.Inspector.Off(),
-				synapse.Status.ToVariableValue()),
-			Instructions = [new ConfigFlowInstruction { Text = Strings.Settings.Inspector.SecurityWarning() }],
-			Fields = [ActionParameter.Toggle(EnabledField, label: Strings.Settings.Inspector.Enabled.Label(), defaultValue: enabled)],
+				synapse.Status.ToVariableValue(guard.Issue)),
+			Instructions =
+			[
+				new ConfigFlowInstruction { Text = Strings.Settings.Inspector.SecurityWarning() },
+				new ConfigFlowInstruction { Text = Strings.Settings.Inspector.StartupEntry() },
+			],
+			Fields =
+			[
+				ActionParameter.Toggle(EnabledField, label: Strings.Settings.Inspector.Enabled.Label(), description: Strings.Settings.Inspector.Enabled.Description(), defaultValue: enabled),
+				ActionParameter.Toggle(RestartField, label: Strings.Settings.Inspector.Restart.Label(), description: Strings.Settings.Inspector.Restart.Description(), defaultValue: false),
+			],
 		};
 	}
 

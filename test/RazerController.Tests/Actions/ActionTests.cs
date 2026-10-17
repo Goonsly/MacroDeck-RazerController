@@ -15,10 +15,22 @@ public sealed class ActionTests
 	private const string Mouse = FakeInspector.MouseSerial;
 	private const string Keyboard = FakeInspector.KeyboardSerial;
 
-	internal static PluginTestHarness CreateHarness(SynapseService synapse, MouseDpiService dpi, KeystoneDigital.RazerController.Autostart.IAutostartRegistry? registry = null) =>
+	internal static PluginTestHarness CreateHarness(
+		SynapseService synapse,
+		MouseDpiService dpi,
+		KeystoneDigital.RazerController.Autostart.IAutostartRegistry? registry = null,
+		KeystoneDigital.RazerController.Autostart.ISynapseProcess? process = null,
+		KeystoneDigital.RazerController.Autostart.ISynapseControlIntent? intent = null,
+		KeystoneDigital.RazerController.Chroma.ChromaClient? chroma = null) =>
 		PluginTestHarness.Create(builder =>
 		{
-			builder.Services.AddRazerServices(synapse, dpi, registry ?? new FakeAutostartRegistry(null));
+			builder.Services.AddRazerServices(
+				synapse,
+				dpi,
+				registry ?? new FakeAutostartRegistry(null),
+				process ?? new Autostart.FakeProcess(KeystoneDigital.RazerController.Autostart.SynapseProcessState.NotRunning),
+				intent ?? new Autostart.FakeIntent(true),
+				chroma ?? Chroma.ChromaTests.Client(new Chroma.FakeChromaServer { Running = false }));
 			builder.UseLocalization(Strings.LocalizationCatalog).RegisterIntegration(RazerIntegration.Create);
 		});
 
@@ -261,6 +273,81 @@ public sealed class ActionTests
 	}
 
 	[Test]
+	public async Task Effect_two_colour_breathing_sends_Synapses_fields()
+	{
+		var (harness, fake, _, _) = await ReadyAsync();
+		await using var _h = harness;
+		fake.OnCommand = c => fake.EditActiveProfile(554, p => p["quickEffects"] = System.Text.Json.Nodes.JsonNode.Parse(c.Payload.GetProperty("effectSetting").GetRawText()));
+
+		var outcome = await harness.Actions.ExecuteAsync("lighting-effect", P(("device", Keyboard), ("effect", "2"), ("color", "#FF0000"), ("color2", "#0000FF")));
+
+		Assert.That(outcome.Succeeded, Is.True, outcome.Error?.Message);
+		var setting = fake.Commands.Single().Payload.GetProperty("effectSetting").GetProperty("selectedEffectSetting");
+		Assert.That(setting.GetProperty("color1").GetString(), Is.EqualTo("#FF0000"));
+		Assert.That(setting.GetProperty("color2").GetString(), Is.EqualTo("#0000FF"));
+		Assert.That(setting.GetProperty("isRandom").GetBoolean(), Is.False);
+	}
+
+	[Test]
+	public void Effect_settings_follow_Synapses_lighting_helper()
+	{
+		var none = new Dictionary<string, object>();
+
+		Assert.That(KeystoneDigital.RazerController.Actions.LightingEffectAction.Setting(2, none)!["color2"], Is.EqualTo("no-color"));
+		Assert.That(KeystoneDigital.RazerController.Actions.LightingEffectAction.Setting(7, new Dictionary<string, object> { ["duration"] = "3", ["random"] = true })!["duration"], Is.EqualTo(3));
+		Assert.That(KeystoneDigital.RazerController.Actions.LightingEffectAction.Setting(5, none)!.Keys, Is.EquivalentTo(new[] { "color1", "duration" }));
+		Assert.That(KeystoneDigital.RazerController.Actions.LightingEffectAction.Setting(4, new Dictionary<string, object> { ["direction"] = "3" })!["direction"], Is.EqualTo(3));
+		Assert.That(KeystoneDigital.RazerController.Actions.LightingEffectAction.Setting(4, new Dictionary<string, object> { ["direction"] = "default" }), Is.Null);
+		Assert.That(KeystoneDigital.RazerController.Actions.LightingEffectAction.Setting(3, none), Is.Null);
+	}
+
+	[Test]
+	public async Task Effect_a_direction_the_device_ignores_is_not_applied()
+	{
+		var (harness, fake, _, _) = await ReadyAsync();
+		await using var _h = harness;
+		fake.OnCommand = c => fake.EditActiveProfile(103, p => p["quickEffects"] = System.Text.Json.Nodes.JsonNode.Parse("""{"selectedEffectId":4,"selectedEffectSetting":{"direction":3}}"""));
+
+		var outcome = await harness.Actions.ExecuteAsync("lighting-effect", P(("device", Mouse), ("effect", "4"), ("direction", "1")));
+
+		Assert.That(outcome.Succeeded, Is.False);
+	}
+
+	[TestCase("set", 40, 10, 40)]
+	[TestCase("up", 0, 30, 100)]
+	[TestCase("down", 0, 30, 60)]
+	public async Task Brightness_sets_or_steps_from_the_current_value(string mode, int value, int step, int expected)
+	{
+		var (harness, fake, synapse, _) = await ReadyAsync();
+		await using var _h = harness;
+		fake.EditActiveProfile(554, p => p["brightness"] = System.Text.Json.Nodes.JsonNode.Parse("""{"isEnabled":true,"value":90}"""));
+		await synapse.RefreshAsync(default);
+		fake.OnCommand = c => fake.EditActiveProfile(554, p => p["brightness"] = System.Text.Json.Nodes.JsonNode.Parse(c.Payload.GetProperty("brightness").GetRawText()));
+
+		var outcome = await harness.Actions.ExecuteAsync("synapse-brightness", P(("device", Keyboard), ("mode", mode), ("value", value), ("step", step)));
+
+		Assert.That(outcome.Succeeded, Is.True, outcome.Error?.Message);
+		var sent = fake.Commands.Single().Payload.GetProperty("brightness");
+		Assert.That(sent.GetProperty("value").GetInt32(), Is.EqualTo(expected));
+		Assert.That(sent.GetProperty("isEnabled").GetBoolean(), Is.True);
+	}
+
+	[Test]
+	public async Task Brightness_zero_switches_the_lighting_off()
+	{
+		var (harness, fake, synapse, _) = await ReadyAsync();
+		await using var _h = harness;
+		fake.EditActiveProfile(554, p => p["brightness"] = System.Text.Json.Nodes.JsonNode.Parse("""{"isEnabled":true,"value":50}"""));
+		await synapse.RefreshAsync(default);
+		fake.OnCommand = c => fake.EditActiveProfile(554, p => p["brightness"] = System.Text.Json.Nodes.JsonNode.Parse(c.Payload.GetProperty("brightness").GetRawText()));
+
+		var outcome = await harness.Actions.ExecuteAsync("synapse-brightness", P(("device", Keyboard), ("mode", "set"), ("value", 0)));
+
+		Assert.That(outcome.Succeeded, Is.True, outcome.Error?.Message);
+		Assert.That(fake.Commands.Last().Payload.GetProperty("brightness").GetProperty("isEnabled").GetBoolean(), Is.False);
+	}
+
+	[Test]
 	public async Task Effect_rejects_an_unknown_effect_id()
 	{
 		var (harness, fake, _, _) = await ReadyAsync();
@@ -368,7 +455,10 @@ public sealed class ActionTests
 	public void Every_dynamic_parameter_is_served_by_the_plugin_not_a_host_source()
 	{
 		var synapse = SynapseServiceTests.CreateService(FakeInspector.FromFixture());
-		var integration = new RazerIntegration(synapse, MouseDpiServiceTests.ServiceFor(null), new FakeAutostartRegistry(null), new KeystoneDigital.RazerController.Autostart.FileSynapseControlIntent(Path.GetTempPath()));
+		var registry = new FakeAutostartRegistry(null);
+		var intent = new Autostart.FakeIntent(true);
+		var process = new Autostart.FakeProcess(KeystoneDigital.RazerController.Autostart.SynapseProcessState.NotRunning);
+		var integration = new RazerIntegration(synapse, MouseDpiServiceTests.ServiceFor(null), registry, intent, new KeystoneDigital.RazerController.Autostart.InspectorGuard(registry, intent, process, SynapseServiceTests.Log), process, Chroma.ChromaTests.Client(new Chroma.FakeChromaServer()));
 
 		var dynamic = integration.Actions
 			.SelectMany(action => action.Parameters.Select(parameter => (action.Id, parameter)))
@@ -416,5 +506,18 @@ public sealed class ActionTests
 		var values = OptionValues(await harness.Actions.GetOptionsAsync("gaming-mode", "device", null, P()));
 
 		Assert.That(values, Does.Contain(Keyboard));
+	}
+
+	[Test]
+	public async Task Actions_report_control_off_instead_of_using_the_port()
+	{
+		var synapse = new SynapseService(FakeInspector.FromFixture(), SynapseServiceTests.Log, SynapseServiceTests.Fast, controlEnabled: () => false);
+		await synapse.RefreshAsync(default);
+		await using var harness = CreateHarness(synapse, MouseDpiServiceTests.ServiceFor(null));
+		await harness.InitializeIntegrationsAsync();
+
+		var outcome = await harness.Actions.ExecuteAsync("switch-profile", P(("device", Mouse), ("mode", "next")));
+
+		Assert.That(ErrorCode(outcome), Is.EqualTo(ActionErrorCodes.NotConfigured));
 	}
 }

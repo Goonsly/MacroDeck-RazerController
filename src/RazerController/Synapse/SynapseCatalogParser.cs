@@ -92,7 +92,8 @@ internal static class SynapseCatalogParser
 			profiles,
 			activeGuid,
 			activeProfile is { } active ? ReadEffect(active) : null,
-			activeProfile is { } active2 ? ReadGamingMode(active2) : null);
+			activeProfile is { } active2 ? ReadGamingMode(active2) : null,
+			activeProfile is { } active3 ? ReadBrightness(active3) : null);
 	}
 
 	private static LightingEffect? ReadEffect(JsonElement profile)
@@ -100,8 +101,18 @@ internal static class SynapseCatalogParser
 		if (!profile.TryGetProperty("quickEffects", out var effects) || effects.ValueKind != JsonValueKind.Object) return null;
 		if (ReadInt(effects, "selectedEffectId") is not { } effectId) return null;
 
-		var color = effects.TryGetProperty("selectedEffectSetting", out var setting) ? ReadString(setting, "color1") : null;
-		return new LightingEffect(effectId, color);
+		if (!effects.TryGetProperty("selectedEffectSetting", out var setting) || setting.ValueKind != JsonValueKind.Object) return new LightingEffect(effectId, null);
+
+		return new LightingEffect(effectId, ReadString(setting, "color1"), setting.Clone());
+	}
+
+	/// <summary>The active profile's brightness, 0 when Synapse has it switched off.</summary>
+	private static int? ReadBrightness(JsonElement profile)
+	{
+		if (!profile.TryGetProperty("brightness", out var brightness) || brightness.ValueKind != JsonValueKind.Object) return null;
+		if (brightness.TryGetProperty("isEnabled", out var enabled) && enabled.ValueKind == JsonValueKind.False) return 0;
+
+		return ReadInt(brightness, "value");
 	}
 
 	private static GamingModeState? ReadGamingMode(JsonElement profile)

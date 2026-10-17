@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json.Serialization;
 using KeystoneDigital.RazerController.Synapse;
 using MacroDeck.Localization;
 using MacroDeck.Sdk;
@@ -11,7 +10,13 @@ internal sealed class LightingEffectAction(SynapseService synapse) : IDynamicOpt
 {
 	private const string EffectParameter = "effect";
 	private const string ColorParameter = "color";
-	private const int StaticEffect = 1;
+	private const string Color2Parameter = "color2";
+	private const string RandomParameter = "random";
+	private const string DurationParameter = "duration";
+	private const string DirectionParameter = "direction";
+	private const string DefaultDirection = "default";
+
+	private const int Static = 1, Breathing = 2, Wave = 4, Reactive = 5, Ripple = 6, Starlight = 7;
 
 	/// <summary>
 	/// Synapse's quick-effect ids. A device's own supported list is not reachable from outside its
@@ -45,7 +50,34 @@ internal sealed class LightingEffectAction(SynapseService synapse) : IDynamicOpt
 			defaultValue: "1",
 			required: true),
 		ActionParameter.Color(ColorParameter, label: Strings.Actions.LightingEffect.Color.Label(), defaultValue: "#00FF00")
-			.OnlyWhen(EffectParameter, "1"),
+			.OnlyWhen(EffectParameter, "1", "2", "5", "6", "7"),
+		ActionParameter.Color(Color2Parameter, label: Strings.Actions.ChromaLighting.Color2.Label(), supportsReset: true)
+			.OnlyWhen(EffectParameter, "2", "7"),
+		ActionParameter.Toggle(RandomParameter, label: Strings.Actions.LightingEffect.Random.Label())
+			.OnlyWhen(EffectParameter, "2", "7"),
+		ActionParameter.Choice(
+			DurationParameter,
+			[
+				new ActionParameterOption { Value = "1", Label = Strings.Actions.LightingEffect.Duration.Short() },
+				new ActionParameterOption { Value = "2", Label = Strings.Actions.LightingEffect.Duration.Medium() },
+				new ActionParameterOption { Value = "3", Label = Strings.Actions.LightingEffect.Duration.Long() },
+			],
+			label: Strings.Actions.LightingEffect.Duration.Label(),
+			defaultValue: "2")
+			.OnlyWhen(EffectParameter, "5", "7"),
+		ActionParameter.Choice(
+			DirectionParameter,
+			[
+				new ActionParameterOption { Value = DefaultDirection, Label = Strings.Actions.LightingEffect.Direction.Default() },
+				new ActionParameterOption { Value = "1", Label = Strings.Actions.LightingEffect.Direction.Left() },
+				new ActionParameterOption { Value = "2", Label = Strings.Actions.LightingEffect.Direction.Right() },
+				new ActionParameterOption { Value = "3", Label = Strings.Actions.LightingEffect.Direction.Up() },
+				new ActionParameterOption { Value = "4", Label = Strings.Actions.LightingEffect.Direction.Down() },
+			],
+			label: Strings.Actions.LightingEffect.Direction.Label(),
+			description: Strings.Actions.LightingEffect.Direction.Description(),
+			defaultValue: DefaultDirection)
+			.OnlyWhen(EffectParameter, "4"),
 	];
 
 	public MacroDeckPlatform Platforms => MacroDeckPlatform.Windows;
@@ -55,11 +87,41 @@ internal sealed class LightingEffectAction(SynapseService synapse) : IDynamicOpt
 	public Task<DynamicOptionsResult> GetDynamicOptionsAsync(DynamicOptionsContext context, CancellationToken cancellationToken) =>
 		Task.FromResult(DeviceOptions.Devices(synapse, context, device => device.Effect is not null));
 
-	private sealed record EffectSetting(
-		[property: JsonPropertyName("selectedEffectId")] int SelectedEffectId,
-		[property: JsonPropertyName("selectedEffectSetting"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ColorSetting? SelectedEffectSetting);
+	/// <summary>
+	/// The selectedEffectSetting Synapse's own UI stores for <paramref name="id"/>, or null for effects without
+	/// settings. Field names and values come from Synapse's lighting helper: a missing second colour is
+	/// "no-color", durations are 1 to 3, directions 1 left, 2 right, 3 up, 4 down.
+	/// </summary>
+	internal static Dictionary<string, object>? Setting(int id, IReadOnlyDictionary<string, object> parameters)
+	{
+		var color = ParameterReader.String(parameters, ColorParameter) ?? "#00FF00";
+		var color2 = ParameterReader.String(parameters, Color2Parameter) ?? "no-color";
+		var random = string.Equals(ParameterReader.String(parameters, RandomParameter), "true", StringComparison.OrdinalIgnoreCase);
+		var duration = Math.Clamp(ParameterReader.Int(parameters, DurationParameter) ?? 2, 1, 3);
+		var direction = ParameterReader.String(parameters, DirectionParameter) is { } text && text != DefaultDirection ? ParameterReader.Int(parameters, DirectionParameter) : null;
 
-	private sealed record ColorSetting([property: JsonPropertyName("color1")] string Color1);
+		return id switch
+		{
+			Static or Ripple => new() { ["color1"] = color },
+			Breathing => new() { ["color1"] = color, ["color2"] = color2, ["isRandom"] = random },
+			Starlight => new() { ["color1"] = color, ["color2"] = color2, ["isRandom"] = random, ["duration"] = duration },
+			Reactive => new() { ["color1"] = color, ["duration"] = duration },
+			Wave when direction is >= 1 and <= 4 => new() { ["direction"] = direction.Value },
+			_ => null,
+		};
+	}
+
+	/// <summary>Whether <paramref name="effect"/> shows what was asked: the effect, and every setting field that was sent.</summary>
+	internal static bool Matches(LightingEffect? effect, int id, Dictionary<string, object>? setting) =>
+		effect?.Id == id
+		&& (setting is null || setting.All(field => string.Equals(effect.Read(field.Key), Format(field.Value), StringComparison.OrdinalIgnoreCase)));
+
+	private static string Format(object value) => value switch
+	{
+		bool flag => flag ? "True" : "False",
+		IFormattable number => number.ToString(null, CultureInfo.InvariantCulture),
+		_ => value.ToString() ?? "",
+	};
 
 	private sealed class Executor(SynapseService synapse) : IActionExecutor
 	{
@@ -79,13 +141,16 @@ internal sealed class LightingEffectAction(SynapseService synapse) : IDynamicOpt
 				return ActionResult.Failed(ActionErrorCodes.ProviderRejected, Strings.Actions.Errors.Unsupported());
 			}
 
-			var color = id == StaticEffect ? ParameterReader.String(context.Parameters, ColorParameter) ?? "#00FF00" : null;
+			var setting = Setting(id, context.Parameters);
+			object effectSetting = setting is null
+				? new { selectedEffectId = id }
+				: new { selectedEffectId = id, selectedEffectSetting = setting };
 
 			var outcome = await synapse.SendAndConfirmAsync(
 				device.Serial,
 				"ON_SET_EFFECTS",
-				new { effectSetting = new EffectSetting(id, color is null ? null : new ColorSetting(color)) },
-				current => current.Effect?.Id == id && (color is null || string.Equals(current.Effect.Color, color, StringComparison.OrdinalIgnoreCase)),
+				new { effectSetting },
+				current => Matches(current.Effect, id, setting),
 				context.CancellationToken).ConfigureAwait(false);
 
 			return DeviceOptions.ToResult(outcome);

@@ -15,6 +15,35 @@ public sealed class SynapseServiceTests
 	internal static SynapseService CreateService(FakeInspector fake) => new(fake, Log, Fast);
 
 	[Test]
+	public async Task Without_the_users_consent_the_inspector_is_never_contacted()
+	{
+		var fake = FakeInspector.FromFixture();
+		var service = new SynapseService(fake, Log, Fast, controlEnabled: () => false);
+
+		await service.RefreshAsync(default);
+
+		Assert.That(service.Status, Is.EqualTo(SynapseStatus.ControlOff));
+		Assert.That(fake.ConnectCount, Is.Zero);
+		Assert.That(service.Devices, Is.Empty);
+	}
+
+	[Test]
+	public async Task Turning_control_off_drops_the_connection()
+	{
+		var fake = FakeInspector.FromFixture();
+		var enabled = true;
+		var service = new SynapseService(fake, Log, Fast, controlEnabled: () => enabled);
+		await service.RefreshAsync(default);
+
+		enabled = false;
+		await service.RefreshAsync(default);
+
+		Assert.That(service.Status, Is.EqualTo(SynapseStatus.ControlOff));
+		Assert.That(fake.IsConnected, Is.False);
+		Assert.That(service.IsReachable, Is.False);
+	}
+
+	[Test]
 	public async Task Refresh_publishes_devices_and_ready()
 	{
 		var service = CreateService(FakeInspector.FromFixture());

@@ -40,7 +40,7 @@ public sealed class CatalogParserTests
 		Assert.That(keyboard.Category, Is.EqualTo(DeviceCategory.Keyboard));
 		Assert.That(keyboard.Name, Is.EqualTo("Razer Cynosa Chroma"));
 		Assert.That(keyboard.ActiveProfileName, Is.EqualTo("Desktop | Default"));
-		Assert.That(keyboard.Effect, Is.EqualTo(new LightingEffect(1, "#00ff00")));
+		Assert.That((keyboard.Effect?.Id, keyboard.Effect?.Color, keyboard.Effect?.Read("color1")), Is.EqualTo((1, "#00ff00", "#00ff00")));
 		Assert.That(keyboard.GamingMode, Is.Not.Null);
 		Assert.That(keyboard.GamingMode!.On, Is.False);
 		Assert.That(keyboard.GamingMode.Raw.GetProperty("scancode").GetInt32(), Is.EqualTo(29));
