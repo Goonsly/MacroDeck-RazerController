@@ -58,7 +58,7 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 		}
 
 		return ConfigFlowResult.Complete(
-			"App Controller for Razer",
+			"Razer App Controller",
 			new Dictionary<string, ConfigFlowValue> { [EnabledField] = ConfigFlowValue.Plain(enable ? "true" : "false") });
 	}
 

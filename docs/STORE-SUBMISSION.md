@@ -13,7 +13,7 @@ Checked against Creator Guidelines **version 6** and the SDK policy on 2026-10-1
 | Public GitHub repository, MIT `LICENSE` | Done: https://github.com/keystonedigitalinc/MacroDeck-RazerController |
 | SDK at or above the Store minimum | Done: `3.0.0-beta.17` |
 | Package ID names the developer, not Razer | Done: `com.keystonedigital.razer` |
-| Display name implies no official relationship | Done: "App Controller for Razer" (trademark after "for"); "Unofficial" leads both descriptions |
+| Display name implies no official relationship | Done: "Razer App Controller" (describes what it controls; guideline section 5 allows a brand name used descriptively); "Unofficial" leads both descriptions |
 | `publisher.name` equals the Creator Portal owner | `Keystone Digital`. **You:** create the "Keystone Digital" organization in the Creator Portal |
 | AI declaration (rule 9) | Done: `generatedAssets: true` (icon and text written with AI help), no runtime AI. **You:** declare the same in the Portal |
 | Only needed permissions (rule 8) | Done: `device:usb` only |

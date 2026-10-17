@@ -1,4 +1,4 @@
-# App Controller for Razer
+# Razer App Controller
 
 An unofficial Macro Deck 3 plugin. Not affiliated with or endorsed by Razer Inc.
 

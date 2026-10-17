@@ -203,8 +203,8 @@ internal sealed class ChromaClient : IDisposable
 	{
 		var app = new
 		{
-			title = "Macro Deck - App Controller for Razer",
-			description = "Lighting buttons from the App Controller for Razer plugin for Macro Deck",
+			title = "Macro Deck - Razer App Controller",
+			description = "Lighting buttons from the Razer App Controller plugin for Macro Deck",
 			author = new { name = "Keystone Digital", contact = "https://github.com/keystonedigitalinc/MacroDeck-RazerController" },
 			device_supported = ChromaDevice.All.Select(device => device.Name).ToArray(),
 			category = "application",
