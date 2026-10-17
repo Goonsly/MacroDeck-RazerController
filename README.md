@@ -1,6 +1,6 @@
-# Synapse Control for Razer (unofficial)
+# App Controller for Razer
 
-A Macro Deck 3 plugin. Not affiliated with or endorsed by Razer Inc.
+An unofficial Macro Deck 3 plugin. Not affiliated with or endorsed by Razer Inc.
 
 Control Razer devices from Macro Deck 3 buttons while Razer Synapse 4 keeps running:
 
