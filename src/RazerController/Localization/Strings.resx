@@ -256,6 +256,9 @@
   <data name="Actions.Errors.ChromaRejected" xml:space="preserve">
     <value>Razer Chroma did not accept the lighting change. Check that Chroma apps are allowed in Razer Synapse.</value>
   </data>
+  <data name="Settings.Inspector.Enabled.Description" xml:space="preserve">
+    <value>Lets the plugin switch profiles, set lighting and brightness, and toggle gaming mode through Synapse's debug port. Turning it off removes the flag from Synapse's startup entry again. Mouse DPI and Chroma lighting work without it.</value>
+  </data>
   <data name="Settings.Inspector.Restart.Label" xml:space="preserve">
     <value>Restart Synapse when I save</value>
   </data>

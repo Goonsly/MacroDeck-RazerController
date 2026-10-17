@@ -81,7 +81,7 @@ internal sealed class InspectorConfigFlow(IAutostartRegistry registry, SynapseSe
 			],
 			Fields =
 			[
-				ActionParameter.Toggle(EnabledField, label: Strings.Settings.Inspector.Enabled.Label(), defaultValue: enabled),
+				ActionParameter.Toggle(EnabledField, label: Strings.Settings.Inspector.Enabled.Label(), description: Strings.Settings.Inspector.Enabled.Description(), defaultValue: enabled),
 				ActionParameter.Toggle(RestartField, label: Strings.Settings.Inspector.Restart.Label(), description: Strings.Settings.Inspector.Restart.Description(), defaultValue: false),
 			],
 		};
