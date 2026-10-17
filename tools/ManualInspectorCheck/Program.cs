@@ -33,6 +33,69 @@ if (args is ["--dump", var path])
 	return 0;
 }
 
+//   --eval <file> <out>  evaluate a script from a file in Synapse's main process and write the result as JSON.
+//                        For read-only exploration; the script decides what it touches.
+if (args is ["--eval", var scriptPath, var outPath])
+{
+	using var fetcher = new HttpCdpTargetFetcher();
+	using var inspector = new CdpInspector(fetcher, new WebSocketRawDuplexFactory());
+	await inspector.ConnectAsync(CancellationToken.None);
+
+	var result = await inspector.EvaluateAsync(await File.ReadAllTextAsync(scriptPath), CancellationToken.None);
+	var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+	await File.WriteAllTextAsync(outPath, json);
+	Console.WriteLine($"Wrote {outPath}: {json.Length} chars.");
+	return 0;
+}
+
+//   --lighting-live   keyboard brightness 50 and back, keyboard two-colour breathing and back, mouse wave up/down
+//                     and back. Changes the active profiles while it runs; restores each step.
+if (args is ["--lighting-live"])
+{
+	using var fetcher = new HttpCdpTargetFetcher();
+	using var inspector = new CdpInspector(fetcher, new WebSocketRawDuplexFactory());
+	var synapse = new SynapseService(inspector, Serilog.Core.Logger.None);
+	await synapse.RefreshAsync(CancellationToken.None);
+	Console.WriteLine($"status={synapse.Status}");
+
+	async Task Step(string label, string serial, string type, object payload, Func<RazerDeviceInfo, bool> applied)
+	{
+		Console.WriteLine($"{DateTime.Now:HH:mm:ss} {label}: {await synapse.SendAndConfirmAsync(serial, type, payload, applied, CancellationToken.None)}");
+		await Task.Delay(TimeSpan.FromSeconds(5));
+	}
+
+	if (synapse.FirstOf(DeviceCategory.Keyboard) is { Effect: { } original } keyboard)
+	{
+		var brightness = keyboard.Brightness ?? 100;
+		Console.WriteLine($"keyboard brightness={brightness} effect={original.Id} setting={original.Setting?.GetRawText()}");
+		await Step("keyboard brightness -> 50", keyboard.Serial, "ON_SET_BRIGHTNESS", new { brightness = new { isEnabled = true, value = 50 } }, d => d.Brightness == 50);
+		await Step("keyboard brightness -> back", keyboard.Serial, "ON_SET_BRIGHTNESS", new { brightness = new { isEnabled = brightness > 0, value = brightness } }, d => d.Brightness == brightness);
+
+		await Step("keyboard breathing red/blue", keyboard.Serial, "ON_SET_EFFECTS",
+			new { effectSetting = new { selectedEffectId = 2, selectedEffectSetting = new { color1 = "#ff0000", color2 = "#0000ff", isRandom = false } } },
+			d => d.Effect?.Id == 2 && d.Effect.Read("color2") == "#0000ff");
+		await Step("keyboard effect -> back", keyboard.Serial, "ON_SET_EFFECTS",
+			original.Setting is { } setting
+				? new { effectSetting = new { selectedEffectId = original.Id, selectedEffectSetting = setting } }
+				: new { effectSetting = new { selectedEffectId = original.Id } },
+			d => d.Effect?.Id == original.Id);
+	}
+
+	if (synapse.FirstOf(DeviceCategory.Mouse) is { Effect: { } mouseOriginal } mouse)
+	{
+		Console.WriteLine($"mouse effect={mouseOriginal.Id} setting={mouseOriginal.Setting?.GetRawText()}");
+		await Step("mouse wave up", mouse.Serial, "ON_SET_EFFECTS", new { effectSetting = new { selectedEffectId = 4, selectedEffectSetting = new { direction = 3 } } }, d => d.Effect?.Id == 4 && d.Effect.Read("direction") == "3");
+		await Step("mouse wave down", mouse.Serial, "ON_SET_EFFECTS", new { effectSetting = new { selectedEffectId = 4, selectedEffectSetting = new { direction = 4 } } }, d => d.Effect?.Id == 4 && d.Effect.Read("direction") == "4");
+		await Step("mouse effect -> back", mouse.Serial, "ON_SET_EFFECTS",
+			mouseOriginal.Setting is { } mouseSetting
+				? new { effectSetting = new { selectedEffectId = mouseOriginal.Id, selectedEffectSetting = mouseSetting } }
+				: new { effectSetting = new { selectedEffectId = mouseOriginal.Id } },
+			d => d.Effect?.Id == mouseOriginal.Id);
+	}
+
+	return 0;
+}
+
 //   --roundtrip     through SynapseService: switch the mouse profile, the keyboard effect and gaming
 //                   mode, restoring each; then read (never write) the mouse DPI over HID
 if (args is ["--roundtrip"])

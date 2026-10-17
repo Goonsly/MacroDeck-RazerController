@@ -1,3 +1,5 @@
+using KeystoneDigital.RazerController.Autostart;
+
 namespace KeystoneDigital.RazerController.Synapse;
 
 internal enum SynapseStatus
@@ -8,6 +10,9 @@ internal enum SynapseStatus
 	InspectorUntrusted,
 	SynapseUnrecognised,
 	NoDevices,
+
+	/// <summary>The user has not turned Synapse control on, so the inspector is not contacted.</summary>
+	ControlOff,
 }
 
 internal enum CommandOutcome
@@ -32,7 +37,15 @@ internal sealed record DevicePlan(string? EventType, object? Payload, Func<Razer
 
 internal static class SynapseStatusText
 {
-	/// <summary>The value of the razer_status variable.</summary>
+	/// <summary>The value of the razer_status variable, naming the setup problem when there is one.</summary>
+	public static string ToVariableValue(this SynapseStatus status, SetupIssue? issue) => issue switch
+	{
+		SetupIssue.FlagMissing => "flag_missing",
+		SetupIssue.RestartNeeded => "restart_needed",
+		_ => status.ToVariableValue(),
+	};
+
+	/// <summary>The value of the razer_status variable without a setup problem.</summary>
 	public static string ToVariableValue(this SynapseStatus status) => status switch
 	{
 		SynapseStatus.Starting => "starting",
@@ -41,6 +54,7 @@ internal static class SynapseStatusText
 		SynapseStatus.InspectorUntrusted => "inspector_untrusted",
 		SynapseStatus.SynapseUnrecognised => "synapse_unrecognised",
 		SynapseStatus.NoDevices => "no_devices",
+		SynapseStatus.ControlOff => "control_off",
 		_ => "unknown",
 	};
 }

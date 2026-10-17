@@ -56,10 +56,10 @@
     <value>Profiles to cycle</value>
   </data>
   <data name="Actions.LightingEffect.Name" xml:space="preserve">
-    <value>Set lighting effect</value>
+    <value>Synapse lighting (saved to profile)</value>
   </data>
   <data name="Actions.LightingEffect.Description" xml:space="preserve">
-    <value>Sets the lighting effect of a Razer device in its active Synapse profile.</value>
+    <value>Sets the lighting effect of a Razer device in its active Synapse profile, with the effect's colours, duration or direction. Needs Synapse control.</value>
   </data>
   <data name="Actions.LightingEffect.Effect.Label" xml:space="preserve">
     <value>Effect</value>
@@ -158,10 +158,10 @@
     <value>Synapse control</value>
   </data>
   <data name="Settings.Inspector.Description" xml:space="preserve">
-    <value>Profile switching, lighting and gaming mode drive Razer Synapse through its local debugging port. Turning this on adds --inspect=127.0.0.1:9229 to Synapse's Windows startup entry. Takes effect the next time Synapse starts. Currently: {flag}. Plugin status: {status}.</value>
+    <value>Profile switching, lighting and gaming mode drive Razer Synapse through its local debug port. Mouse DPI works without it. Currently: {flag}. Plugin status: {status}. If the status is restart_needed, tick Restart Synapse when I save, or sign out of Windows and back in. Opening Synapse from the Start menu starts it without the flag. If it is flag_missing, Synapse removed the flag from its startup entry: save this screen again to put it back.</value>
   </data>
   <data name="Settings.Inspector.SecurityWarning" xml:space="preserve">
-    <value>While this is on, any program running on this PC can control Razer Synapse through that port. Mouse DPI works without it.</value>
+    <value>Security: while Synapse control is on, Razer Synapse opens a debug port on 127.0.0.1:9229. Any program or Windows user on this PC can connect to that port and run code inside Razer Synapse, not only control it. Turn this on only if you trust every program and every user on this PC.</value>
   </data>
   <data name="Settings.Inspector.Enabled.Label" xml:space="preserve">
     <value>Enable Synapse control</value>
@@ -177,6 +177,153 @@
   </data>
   <data name="Actions.Common.ProfileMissing" xml:space="preserve">
     <value>{profile} (missing)</value>
+  </data>
+  <data name="Settings.Inspector.StartupEntry" xml:space="preserve">
+    <value>What changes: turning this on adds --inspect=127.0.0.1:9229 to the end of the RazerAppEngine value under HKCU\Software\Microsoft\Windows\CurrentVersion\Run. Nothing else in that entry changes. Turning it off removes exactly that flag again and leaves the rest of the entry as it is. Both take effect the next time Synapse starts. The plugin never changes the entry or restarts Synapse on its own.</value>
+  </data>
+  <data name="Actions.Errors.ControlOff" xml:space="preserve">
+    <value>Synapse control is off. Turn it on in the plugin's settings first.</value>
+  </data>
+  <data name="Actions.ChromaLighting.Name" xml:space="preserve">
+    <value>Chroma lighting (temporary, no setup)</value>
+  </data>
+  <data name="Actions.ChromaLighting.Description" xml:space="preserve">
+    <value>Static colour, Breathing, Spectrum cycling, Wave or Off through Razer Chroma, with brightness and speed, without Synapse control. The lighting stays while Macro Deck runs; choose Synapse lighting to go back to your Synapse profile. Needs the Chroma module in Razer Synapse with Chroma apps allowed.</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.Label" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.All" xml:space="preserve">
+    <value>All Razer devices</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.Keyboard" xml:space="preserve">
+    <value>Keyboards</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.Mouse" xml:space="preserve">
+    <value>Mice</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.Mousepad" xml:space="preserve">
+    <value>Mouse mats</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.Headset" xml:space="preserve">
+    <value>Headsets</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.Keypad" xml:space="preserve">
+    <value>Keypads</value>
+  </data>
+  <data name="Actions.ChromaLighting.Devices.ChromaLink" xml:space="preserve">
+    <value>Chroma Link devices</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effect.Label" xml:space="preserve">
+    <value>Lighting</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effects.Static" xml:space="preserve">
+    <value>Static colour</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effects.Breathing" xml:space="preserve">
+    <value>Breathing</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effects.Spectrum" xml:space="preserve">
+    <value>Spectrum cycling</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effects.Wave" xml:space="preserve">
+    <value>Wave</value>
+  </data>
+  <data name="Actions.ChromaLighting.Color2.Label" xml:space="preserve">
+    <value>Second colour (optional)</value>
+  </data>
+  <data name="Actions.ChromaLighting.Color2.Description" xml:space="preserve">
+    <value>When set, each breath alternates between the two colours.</value>
+  </data>
+  <data name="Actions.ChromaLighting.Brightness.Label" xml:space="preserve">
+    <value>Brightness (%)</value>
+  </data>
+  <data name="Actions.ChromaLighting.Speed.Label" xml:space="preserve">
+    <value>Speed</value>
+  </data>
+  <data name="Actions.ChromaLighting.Reverse.Label" xml:space="preserve">
+    <value>Reverse direction</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effects.Off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="Actions.ChromaLighting.Effects.Synapse" xml:space="preserve">
+    <value>Synapse lighting (give control back)</value>
+  </data>
+  <data name="Actions.Errors.ChromaUnavailable" xml:space="preserve">
+    <value>Razer Chroma is not available. Install the Chroma module in Razer Synapse and allow Chroma apps.</value>
+  </data>
+  <data name="Actions.Errors.ChromaRejected" xml:space="preserve">
+    <value>Razer Chroma did not accept the lighting change. Check that Chroma apps are allowed in Razer Synapse.</value>
+  </data>
+  <data name="Settings.Inspector.Restart.Label" xml:space="preserve">
+    <value>Restart Synapse when I save</value>
+  </data>
+  <data name="Settings.Inspector.Restart.Description" xml:space="preserve">
+    <value>Closes Razer Synapse and starts it again, so the change works right away. Without this, it takes effect the next time Synapse starts.</value>
+  </data>
+  <data name="Settings.Inspector.RestartFailed" xml:space="preserve">
+    <value>Your settings were saved, but Razer Synapse could not be restarted. Sign out of Windows and back in instead.</value>
+  </data>
+  <data name="Actions.LightingEffect.Random.Label" xml:space="preserve">
+    <value>Random colours</value>
+  </data>
+  <data name="Actions.LightingEffect.Duration.Label" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Actions.LightingEffect.Duration.Short" xml:space="preserve">
+    <value>Short</value>
+  </data>
+  <data name="Actions.LightingEffect.Duration.Medium" xml:space="preserve">
+    <value>Medium</value>
+  </data>
+  <data name="Actions.LightingEffect.Duration.Long" xml:space="preserve">
+    <value>Long</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Label" xml:space="preserve">
+    <value>Direction</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Description" xml:space="preserve">
+    <value>Keyboards move left or right, mice up or down. A direction the device does not have is not applied.</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Default" xml:space="preserve">
+    <value>Device default</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Left" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Right" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Up" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="Actions.LightingEffect.Direction.Down" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="Actions.Brightness.Name" xml:space="preserve">
+    <value>Synapse brightness (saved to profile)</value>
+  </data>
+  <data name="Actions.Brightness.Description" xml:space="preserve">
+    <value>Sets the lighting brightness of a Razer device in its active Synapse profile, or makes it brighter or dimmer. Needs Synapse control.</value>
+  </data>
+  <data name="Actions.Brightness.Mode.Label" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="Actions.Brightness.Mode.Set" xml:space="preserve">
+    <value>Set to a value</value>
+  </data>
+  <data name="Actions.Brightness.Mode.Up" xml:space="preserve">
+    <value>Brighter</value>
+  </data>
+  <data name="Actions.Brightness.Mode.Down" xml:space="preserve">
+    <value>Dimmer</value>
+  </data>
+  <data name="Actions.Brightness.Value.Label" xml:space="preserve">
+    <value>Brightness (%)</value>
+  </data>
+  <data name="Actions.Brightness.Step.Label" xml:space="preserve">
+    <value>Step (%)</value>
   </data>
   <data name="Settings.Inspector.WriteFailed" xml:space="preserve">
     <value>Windows did not allow changing Razer Synapse's startup entry.</value>

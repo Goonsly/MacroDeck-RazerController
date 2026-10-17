@@ -20,13 +20,17 @@ internal sealed class SynapseService : BackgroundService
 	private readonly IInspector _inspector;
 	private readonly ILogger _logger;
 	private readonly SynapseServiceOptions _options;
+	private readonly Func<bool> _controlEnabled;
 	private readonly ConcurrentDictionary<string, SemaphoreSlim> _deviceGates = new(StringComparer.Ordinal);
 
 	private IReadOnlyList<RazerDeviceInfo> _devices = [];
 	private int _status = (int)SynapseStatus.Starting;
 
-	public SynapseService(IInspector inspector, ILogger logger, SynapseServiceOptions? options = null)
+	/// <param name="controlEnabled">Whether the user turned Synapse control on in the settings. Until then the
+	/// inspector is never contacted, even when its port already answers.</param>
+	public SynapseService(IInspector inspector, ILogger logger, SynapseServiceOptions? options = null, Func<bool>? controlEnabled = null)
 	{
+		_controlEnabled = controlEnabled ?? (() => true);
 		_inspector = inspector;
 		_logger = logger.ForContext<SynapseService>();
 		_options = options ?? SynapseServiceOptions.Default;
@@ -47,6 +51,14 @@ internal sealed class SynapseService : BackgroundService
 
 	public async Task RefreshAsync(CancellationToken cancellationToken)
 	{
+		if (!_controlEnabled())
+		{
+			_inspector.Disconnect();
+			Volatile.Write(ref _devices, []);
+			SetStatus(SynapseStatus.ControlOff);
+			return;
+		}
+
 		try
 		{
 			if (!_inspector.IsConnected) await _inspector.ConnectAsync(cancellationToken).ConfigureAwait(false);

@@ -1,4 +1,5 @@
 using System.Globalization;
+using KeystoneDigital.RazerController.Autostart;
 using KeystoneDigital.RazerController.Hid;
 using KeystoneDigital.RazerController.Synapse;
 using MacroDeck.Sdk.Variables;
@@ -22,9 +23,11 @@ internal static class RazerVariables
 		VariableDefinition.Eager("razer_keyboard_profile", VariableType.Text, refreshInterval: Refresh) with { Id = "keyboard-profile" },
 		VariableDefinition.Eager("razer_keyboard_effect", VariableType.Text, refreshInterval: Refresh) with { Id = "keyboard-effect" },
 		VariableDefinition.Eager("razer_keyboard_gaming_mode", VariableType.Boolean, refreshInterval: Refresh) with { Id = "keyboard-gaming-mode" },
+		VariableDefinition.Eager("razer_keyboard_brightness", VariableType.Numeric, refreshInterval: Refresh) with { Id = "keyboard-brightness" },
+		VariableDefinition.Eager("razer_mouse_brightness", VariableType.Numeric, refreshInterval: Refresh) with { Id = "mouse-brightness" },
 	];
 
-	public static VariableReading Read(string localId, SynapseService synapse, MouseDpiService dpi)
+	public static VariableReading Read(string localId, SynapseService synapse, MouseDpiService dpi, SetupIssue? issue = null)
 	{
 		var usable = synapse.Status == SynapseStatus.Ready;
 		var mouse = usable ? synapse.FirstOf(DeviceCategory.Mouse) : null;
@@ -33,13 +36,15 @@ internal static class RazerVariables
 
 		object? value = localId switch
 		{
-			"status" => synapse.Status.ToVariableValue(),
+			"status" => synapse.Status.ToVariableValue(issue),
 			"mouse-profile" => mouse?.ActiveProfileName,
 			"mouse-dpi" => dpiState?.Dpi,
 			"mouse-dpi-stage" => dpiState is null ? null : string.Create(CultureInfo.InvariantCulture, $"{dpiState.StageIndex}/{dpiState.StageCount}"),
 			"keyboard-profile" => keyboard?.ActiveProfileName,
 			"keyboard-effect" => keyboard?.Effect is { } effect ? EffectName(effect.Id) : null,
 			"keyboard-gaming-mode" => keyboard?.GamingMode?.On,
+			"keyboard-brightness" => keyboard?.Brightness,
+			"mouse-brightness" => mouse?.Brightness,
 			_ => null,
 		};
 

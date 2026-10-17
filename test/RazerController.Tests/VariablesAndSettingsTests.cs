@@ -78,7 +78,57 @@ public sealed class VariablesAndSettingsTests
 	}
 
 	private static InspectorConfigFlow Flow(FakeAutostartRegistry registry, MemoryIntent? intent = null) =>
-		new(registry, SynapseServiceTests.CreateService(FakeInspector.FromFixture()), intent ?? new MemoryIntent());
+		Flow(registry, intent ?? new MemoryIntent(), new KeystoneDigital.RazerController.Tests.Autostart.FakeProcess(SynapseProcessState.NotRunning));
+
+	private static InspectorConfigFlow Flow(IAutostartRegistry registry, ISynapseControlIntent intent, ISynapseProcess process) =>
+		new(registry, SynapseServiceTests.CreateService(FakeInspector.FromFixture()), intent, new InspectorGuard(registry, intent, process, SynapseServiceTests.Log), process);
+
+	[Test]
+	public async Task Config_flow_restarts_Synapse_with_the_flag_only_when_asked()
+	{
+		var registry = new FakeAutostartRegistry(RunValue);
+		var process = new KeystoneDigital.RazerController.Tests.Autostart.FakeProcess(SynapseProcessState.RunningWithoutFlag);
+		var flow = Flow(registry, new MemoryIntent(), process);
+
+		await flow.SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = true }, null!, default);
+		Assert.That(process.Restarts, Is.Empty);
+
+		var result = await flow.SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = true, ["restart"] = true }, null!, default);
+
+		Assert.That(result.Kind, Is.EqualTo(ConfigFlowResultKind.Complete));
+		Assert.That(process.Restarts, Is.EqualTo(new[] { RunValue + " --inspect=127.0.0.1:9229" }));
+	}
+
+	[Test]
+	public async Task Config_flow_turning_off_with_restart_closes_the_port_now()
+	{
+		var registry = new FakeAutostartRegistry(RunValue + " --inspect=127.0.0.1:9229");
+		var process = new KeystoneDigital.RazerController.Tests.Autostart.FakeProcess(SynapseProcessState.RunningWithFlag);
+
+		await Flow(registry, new MemoryIntent(), process).SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = false, ["restart"] = JsonSerializer.SerializeToElement(true) }, null!, default);
+
+		Assert.That(process.Restarts, Is.EqualTo(new[] { RunValue }));
+	}
+
+	[Test]
+	public async Task Config_flow_reports_a_failed_restart_after_saving()
+	{
+		var registry = new FakeAutostartRegistry(RunValue);
+		var intent = new MemoryIntent();
+
+		var result = await Flow(registry, intent, new FailingProcess()).SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = true, ["restart"] = true }, null!, default);
+
+		Assert.That(result.Kind, Is.EqualTo(ConfigFlowResultKind.Error));
+		Assert.That(intent.Value, Is.True);
+		Assert.That(registry.Value, Is.EqualTo(RunValue + " --inspect=127.0.0.1:9229"));
+	}
+
+	private sealed class FailingProcess : ISynapseProcess
+	{
+		public SynapseProcessState GetState() => SynapseProcessState.NotRunning;
+
+		public Task RestartAsync(string commandLine, CancellationToken cancellationToken) => throw new InvalidOperationException("refused");
+	}
 
 	[Test]
 	public async Task Config_flow_records_the_users_choice()
@@ -95,12 +145,32 @@ public sealed class VariablesAndSettingsTests
 	}
 
 	[Test]
-	public async Task Config_flow_offers_the_current_flag_state()
+	public async Task Config_flow_does_not_count_a_hand_added_flag_as_on()
 	{
 		var result = await Flow(new FakeAutostartRegistry(RunValue + " --inspect=127.0.0.1:9229")).StartAsync(null!, default);
 
 		Assert.That(result.Kind, Is.EqualTo(ConfigFlowResultKind.Step));
-		Assert.That(result.NextStep!.Fields.Single().DefaultValue, Is.EqualTo(true));
+		Assert.That(result.NextStep!.Fields[0].DefaultValue, Is.EqualTo(false));
+	}
+
+	[Test]
+	public async Task Config_flow_offers_the_users_choice()
+	{
+		var intent = new MemoryIntent();
+		intent.Set(true);
+
+		var result = await Flow(new FakeAutostartRegistry(RunValue + " --inspect=127.0.0.1:9229"), intent).StartAsync(null!, default);
+
+		Assert.That(result.NextStep!.Fields[0].DefaultValue, Is.EqualTo(true));
+		Assert.That(result.NextStep!.Fields[1].DefaultValue, Is.EqualTo(false), "restart is never pre-ticked");
+	}
+
+	[Test]
+	public async Task Config_flow_explains_the_security_cost_and_the_startup_change()
+	{
+		var result = await Flow(new FakeAutostartRegistry(RunValue)).StartAsync(null!, default);
+
+		Assert.That(result.NextStep!.Instructions, Has.Count.EqualTo(2));
 	}
 
 	[Test]
@@ -145,7 +215,7 @@ public sealed class VariablesAndSettingsTests
 	[Test]
 	public async Task Config_flow_reports_a_registry_it_cannot_write()
 	{
-		var flow = new InspectorConfigFlow(new LockedRegistry(RunValue), SynapseServiceTests.CreateService(FakeInspector.FromFixture()), new MemoryIntent());
+		var flow = Flow(new LockedRegistry(RunValue), new MemoryIntent(), new KeystoneDigital.RazerController.Tests.Autostart.FakeProcess(SynapseProcessState.NotRunning));
 
 		var result = await flow.SubmitAsync("inspector", new Dictionary<string, object?> { ["enabled"] = true }, null!, default);
 

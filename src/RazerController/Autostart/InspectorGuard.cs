@@ -5,54 +5,54 @@ using Serilog;
 
 namespace KeystoneDigital.RazerController.Autostart;
 
-/// <summary>
-/// Synapse rewrites its own Windows startup entry and drops the inspector flag. While the user has
-/// Synapse control on, this puts the flag back and restarts a Synapse that came up without it.
-/// </summary>
-internal sealed class InspectorGuard(
-	IAutostartRegistry registry, ISynapseControlIntent intent, ISynapseProcess process, ILogger logger, TimeProvider clock)
+/// <summary>Why Synapse control is on but the inspector does not answer.</summary>
+internal enum SetupIssue
 {
-	/// <summary>Keeps a Synapse that refuses the flag from being restarted in a loop.</summary>
-	public static readonly TimeSpan RestartCooldown = TimeSpan.FromMinutes(10);
+	/// <summary>Synapse rewrote its startup entry and dropped the flag. Saving the settings again puts it back.</summary>
+	FlagMissing,
 
+	/// <summary>Synapse is running without the flag. The user restarts it, or presses the Restart Synapse action.</summary>
+	RestartNeeded,
+}
+
+/// <summary>
+/// Synapse rewrites its own Windows startup entry and drops the inspector flag. This only reports that:
+/// it never writes the startup entry and never restarts Synapse. The settings screen and the user's
+/// Restart Synapse button are the only things that change either.
+/// </summary>
+internal sealed class InspectorGuard(IAutostartRegistry registry, ISynapseControlIntent intent, ISynapseProcess process, ILogger logger)
+{
 	private readonly ILogger _logger = logger.ForContext<InspectorGuard>();
-	private DateTimeOffset? _lastRestart;
+	private int _issue = -1;
 
-	public async Task EnsureAsync(SynapseStatus status, CancellationToken cancellationToken)
+	public SetupIssue? Issue => Volatile.Read(ref _issue) is var value && value >= 0 ? (SetupIssue)value : null;
+
+	public void Check(SynapseStatus status)
 	{
-		if (status == SynapseStatus.Ready)
+		var issue = Evaluate(status);
+		var next = issue is { } found ? (int)found : -1;
+		if (Interlocked.Exchange(ref _issue, next) != next && issue is not null)
 		{
-			// A working connection means someone deliberately set the flag; remember that as consent.
-			if (intent.Get() is null) intent.Set(true);
-			return;
+			_logger.Warning("Synapse control is on but Synapse is not reachable: {Issue}", issue);
 		}
+	}
 
-		if (status != SynapseStatus.InspectorUnavailable || intent.Get() != true) return;
+	private SetupIssue? Evaluate(SynapseStatus status)
+	{
+		if (status != SynapseStatus.InspectorUnavailable || intent.Get() != true) return null;
 
 		var commandLine = registry.GetValue();
-		if (string.IsNullOrWhiteSpace(commandLine)) return;
+		if (string.IsNullOrWhiteSpace(commandLine)) return null;
 
-		if (!AutostartCommandLine.HasFlag(commandLine, InspectorConfigFlow.InspectFlag))
-		{
-			commandLine = AutostartCommandLine.AppendFlag(commandLine, InspectorConfigFlow.InspectFlag);
-			registry.SetValue(commandLine);
-			_logger.Warning("Synapse removed the inspector flag from its startup entry; put it back");
-		}
+		if (!AutostartCommandLine.HasFlag(commandLine, InspectorConfigFlow.InspectFlag)) return SetupIssue.FlagMissing;
 
-		if (process.GetState() != SynapseProcessState.RunningWithoutFlag) return;
-
-		var now = clock.GetUtcNow();
-		if (_lastRestart is { } last && now - last < RestartCooldown) return;
-
-		_lastRestart = now;
-		_logger.Warning("Synapse is running without the inspector flag; restarting it");
-		await process.RestartAsync(commandLine, cancellationToken).ConfigureAwait(false);
+		return process.GetState() == SynapseProcessState.RunningWithoutFlag ? SetupIssue.RestartNeeded : null;
 	}
 }
 
 internal sealed class InspectorGuardService(InspectorGuard guard, SynapseService synapse, ILogger logger) : BackgroundService
 {
-	private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
+	private static readonly TimeSpan Interval = TimeSpan.FromSeconds(10);
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
@@ -70,7 +70,7 @@ internal sealed class InspectorGuardService(InspectorGuard guard, SynapseService
 		{
 			try
 			{
-				await guard.EnsureAsync(synapse.Status, stoppingToken).ConfigureAwait(false);
+				guard.Check(synapse.Status);
 				await Task.Delay(Interval, stoppingToken).ConfigureAwait(false);
 			}
 			catch (OperationCanceledException)
